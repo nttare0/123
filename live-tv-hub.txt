@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live TV Hub</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: #fff;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* HEADER */
+#header {
+  background: #c00;
+  padding: 10px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+#header span {
+  font-size: 12px;
+  background: rgba(0,0,0,0.3);
+  padding: 3px 10px;
+  border-radius: 10px;
+}
+
+/* BODY */
+#body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* SIDEBAR */
+#sidebar {
+  width: 185px;
+  min-width: 185px;
+  background: #1a1a1a;
+  overflow-y: auto;
+  border-right: 1px solid #333;
+  outline: none;
+}
+
+.group-title {
+  padding: 10px 12px 6px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #888;
+  text-transform: uppercase;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.ch {
+  padding: 11px 14px;
+  font-size: 14px;
+  color: #ccc;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  outline: none;
+}
+
+.ch:hover         { background: #222; color: #fff; }
+.ch.on            { background: #2a0000; color: #fff; border-left-color: #c00; }
+
+/* TV REMOTE FOCUS — big visible highlight */
+.ch.focused {
+  background: #c00;
+  color: #fff;
+  border-left-color: #fff;
+  font-weight: bold;
+}
+.ch.focused.on {
+  background: #c00;
+}
+
+/* PLAYER AREA */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #000;
+  position: relative;
+}
+
+#bar {
+  background: #1a1a1a;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #aaa;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#bar b { color: #fff; }
+
+/* remote hint */
+#remote-hint {
+  margin-left: auto;
+  font-size: 11px;
+  color: #555;
+}
+
+#player {
+  flex: 1;
+  width: 100%;
+  border: none;
+  display: block;
+}
+
+/* LOADER OVERLAY */
+#loader {
+  display: none;
+  position: absolute;
+  top: 37px; /* below #bar */
+  left: 0; right: 0; bottom: 0;
+  background: #000;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 18px;
+  z-index: 10;
+}
+#loader.show { display: flex; }
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #333;
+  border-top-color: #c00;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#loader p {
+  font-size: 14px;
+  color: #aaa;
+}
+#loader b { color: #fff; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  📺 Live TV Hub
+  <span>● LIVE</span>
+</div>
+
+<div id="body">
+
+  <div id="sidebar" tabindex="0">
+
+    <div class="group-title">🇷🇼 Rwanda</div>
+    <div class="ch on" data-url="https://globetv.app/embed/?cc=RW&cid=RwandaTV.rw&lang=eng" data-name="Rwanda TV">Rwanda TV</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=RW&cid=KC2.rw&lang=eng" data-name="KC2">KC2</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=RW&cid=IsiboTV.rw&lang=eng" data-name="Isibo TV">Isibo TV</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=RW&cid=BPlusTV.rw&lang=eng" data-name="BPlus TV">BPlus TV</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=RW&cid=TV10.rw&lang=eng" data-name="TV10">TV10</div>
+
+    <div class="group-title">🇺🇬 Uganda</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=UG&cid=BTV.ug&lang=eng" data-name="BTV">BTV</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=UG&cid=ArkTV.ug&lang=eng" data-name="Ark TV">Ark TV</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=UG&cid=BukeddeTV1.ug&lang=eng" data-name="Bukedde 1">Bukedde 1</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=UG&cid=BukeddeTV2.ug&lang=eng" data-name="Bukedde 2">Bukedde 2</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=UG&cid=DreamTV.ug&lang=eng" data-name="Dream TV">Dream TV</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=UG&cid=PraiseJesusTowerTV.ug&lang=eng" data-name="Praise TV">Praise TV</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=UG&cid=TVWest.ug&lang=eng" data-name="TV West">TV West</div>
+
+    <div class="group-title">🇹🇿 Tanzania</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=TZ&cid=IBNTV.tz&lang=eng" data-name="IBN TV">IBN TV</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=TZ&cid=IBNTVAfrica.tz&lang=eng" data-name="IBN TV Africa">IBN TV Africa</div>
+
+    <div class="group-title">🇰🇪 Kenya</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=KE&cid=citizen-tv-kenya.ke&lang=eng" data-name="Citizen TV">Citizen TV</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=KE&cid=MERUTV.ke&lang=eng" data-name="Meru TV">Meru TV</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=KE&cid=MorningCloudTV.ke&lang=eng" data-name="Morning Cloud TV">Morning Cloud TV</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=KE&cid=NTVKenya.ke&lang=eng" data-name="NTV Kenya">NTV Kenya</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=KE&cid=YOUNIBMediaTV.ke&lang=eng" data-name="Younib Media TV">Younib Media TV</div>
+
+    <div class="group-title">🌍 International</div>
+    <div class="ch" data-url="https://tv247.us/embed/tbs-usa/" data-name="TBS USA">TBS USA</div>
+    <div class="ch" data-url="https://tv247.us/embed/sport-5-plus-israel/" data-name="Sport 5+">Sport 5+</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=US&cid=USATODAY.us&lang=eng" data-name="USA Today">USA Today</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=US&cid=national-geographic-yt.us&lang=eng" data-name="Nat Geo">Nat Geo</div>
+    <div class="ch" data-url="https://globetv.app/embed/?cc=US&cid=NationalGeographicWild.us&lang=eng" data-name="Nat Geo Wild">Nat Geo Wild</div>
+
+    <div class="group-title">📡 DL Streams (1–502)</div>
+    <div id="dl-list"></div>
+
+  </div>
+
+  <div id="main">
+    <div id="bar">
+      Now Playing: <b id="now">Rwanda TV</b>
+      <span id="remote-hint">▲▼ Navigate &nbsp;|&nbsp; OK / Enter = Play</span>
+    </div>
+
+    <!-- Loader overlay -->
+    <div id="loader">
+      <div class="spinner"></div>
+      <p>Loading <b id="loading-name"></b>...</p>
+    </div>
+
+    <iframe id="player"
+      src="https://globetv.app/embed/?cc=RW&cid=RwandaTV.rw&lang=eng"
+      allow="autoplay; fullscreen; picture-in-picture"
+      referrerpolicy="strict-origin-when-cross-origin"
+      allowfullscreen>
+    </iframe>
+  </div>
+
+</div>
+
+<script>
+// ── BUILD DL STREAMS 1–502 ──
+(function() {
+  var container = document.getElementById('dl-list');
+  var frag = document.createDocumentFragment();
+  for (var n = 1; n <= 502; n++) {
+    var num = (n < 10) ? '0' + n : '' + n;
+    var d = document.createElement('div');
+    d.className = 'ch';
+    d.setAttribute('data-url', 'https://dlstreams.com/stream/stream-' + num + '.php');
+    d.setAttribute('data-name', 'Stream ' + n);
+    d.textContent = 'Stream ' + n;
+    frag.appendChild(d);
+  }
+  container.appendChild(frag);
+})();
+
+// ── INIT ──
+var channels    = document.querySelectorAll('.ch');
+var player      = document.getElementById('player');
+var nowEl       = document.getElementById('now');
+var loader      = document.getElementById('loader');
+var loadName    = document.getElementById('loading-name');
+var sidebar     = document.getElementById('sidebar');
+var focusIdx    = 0;
+var loaderTimer = null;
+
+// ── PLAY ──
+function play(el) {
+  for (var i = 0; i < channels.length; i++) channels[i].classList.remove('on');
+  el.classList.add('on');
+  var url  = el.getAttribute('data-url');
+  var name = el.getAttribute('data-name');
+  loadName.textContent = name;
+  loader.classList.add('show');
+  clearTimeout(loaderTimer);
+  loaderTimer = setTimeout(function() {
+    player.src = url;
+    nowEl.textContent = name;
+  }, 300);
+  loaderTimer = setTimeout(function() {
+    loader.classList.remove('show');
+  }, 5000);
+}
+
+player.addEventListener('load', function() {
+  clearTimeout(loaderTimer);
+  setTimeout(function(){ loader.classList.remove('show'); }, 500);
+});
+
+// ── CLICK ──
+for (var i = 0; i < channels.length; i++) {
+  (function(idx, el) {
+    el.addEventListener('click', function() {
+      focusIdx = idx;
+      setFocus(idx);
+      play(el);
+    });
+  })(i, channels[i]);
+}
+
+// ── FOCUS / REMOTE ──
+function setFocus(idx) {
+  for (var i = 0; i < channels.length; i++) channels[i].classList.remove('focused');
+  if (idx >= 0 && idx < channels.length) {
+    channels[idx].classList.add('focused');
+    channels[idx].scrollIntoView({ block: 'nearest' });
+  }
+}
+
+sidebar.focus();
+setFocus(0);
+
+document.addEventListener('keydown', function(e) {
+  var key = e.keyCode;
+  if (key === 40 || key === 34) {          // Down / PageDown
+    e.preventDefault();
+    if (focusIdx < channels.length - 1) { focusIdx++; setFocus(focusIdx); }
+  } else if (key === 38 || key === 33) {   // Up / PageUp
+    e.preventDefault();
+    if (focusIdx > 0) { focusIdx--; setFocus(focusIdx); }
+  } else if (key === 13 || key === 32) {   // Enter / OK
+    e.preventDefault();
+    play(channels[focusIdx]);
+  } else if (key >= 49 && key <= 57) {     // 1–9 quick jump
+    var n = key - 49;
+    if (n < channels.length) { focusIdx = n; setFocus(n); play(channels[n]); }
+  }
+});
+</script>
+
+</body>
+</html>
