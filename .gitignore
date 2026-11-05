@@ -1,0 +1,39 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build output
+dist
+dist-ssr
+build
+*.local
+
+# Raw upstream iptv-org dumps — local sync cache only (~25 MB).
+# Anchored to the repo root: `public/data/` holds the merged snapshot and IS committed.
+# Regenerate the cache with `npm run data:sync`.
+/data/
+.data-cache
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Env
+.env
+.env.*
