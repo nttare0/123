@@ -2,11 +2,20 @@ import { fileURLToPath, URL } from "node:url"
 
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
-import { defineConfig } from "vite"
+import { defineConfig, loadEnv } from "vite"
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), {
+    name: "search-console-verification",
+    transformIndexHtml: {
+      handler: (_html, context) => {
+        const mode = context.server?.config.mode ?? "production"
+        const token = loadEnv(mode, process.cwd(), "VITE_GOOGLE_SITE_VERIFICATION").VITE_GOOGLE_SITE_VERIFICATION
+        return token ? [{ tag: "meta", attrs: { name: "google-site-verification", content: token }, injectTo: "head" as const }] : []
+      },
+    },
+  }],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

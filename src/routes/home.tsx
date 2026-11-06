@@ -6,7 +6,7 @@ import { ChannelGrid } from "@/components/channel/channel-grid"
 import { Button } from "@/components/ui/button"
 import { useCatalog } from "@/lib/catalog"
 import { HOME_CATEGORIES, categoryName, countryInfo } from "@/lib/collections"
-import { suggestedCountry } from "@/lib/country"
+import { useDetectedCountry } from "@/lib/country"
 import { isListable, popularity } from "@/lib/search"
 import { cn } from "@/lib/utils"
 import { useSettings } from "@/stores/settings"
@@ -15,7 +15,7 @@ export function HomePage() {
   const { index, meta } = useCatalog()
   const homeCountry = useSettings((s) => s.homeCountry)
   const hideHeaderOnly = useSettings((s) => s.hideHeaderOnly)
-  const [detectedCountry] = React.useState(suggestedCountry)
+  const detectedCountry = useDetectedCountry(!homeCountry)
   const [category, setCategory] = React.useState("")
   const countryCode = homeCountry || detectedCountry
   const country = countryCode ? countryInfo(countryCode, meta) : null
@@ -47,7 +47,7 @@ export function HomePage() {
               : "A few good places to start. Explore channels from around the world."}
           </p>
           {country && !homeCountry ? (
-            <p className="text-xs text-muted-foreground">Suggested from your time zone · change in Settings</p>
+            <p className="text-xs text-muted-foreground">Approximate network location · change in Settings</p>
           ) : null}
         </div>
         <Button asChild variant="outline" size="sm" className="gap-2">
