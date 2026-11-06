@@ -1,4 +1,4 @@
-import { Command, Menu, Moon, Search, Sun } from "lucide-react"
+import { Command, Menu, Monitor, Moon, Search, Sun } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useTheme } from "next-themes"
 
@@ -11,8 +11,8 @@ import { cn } from "@/lib/utils"
 
 export function SiteHeader() {
   const navigate = useNavigate()
-  const { resolvedTheme, setTheme } = useTheme()
-  const { setOpenMobile } = useSidebar()
+  const { theme, resolvedTheme, setTheme } = useTheme()
+  const { toggleSidebar, open, openMobile, isMobile } = useSidebar()
 
   const submit = (value: string) => {
     const query = value.trim()
@@ -25,9 +25,10 @@ export function SiteHeader() {
         <Button
           variant="ghost"
           size="icon"
-          className="size-9 md:hidden"
-          onClick={() => setOpenMobile(true)}
-          aria-label="Open navigation"
+          className="size-9"
+          onClick={toggleSidebar}
+          aria-label="Toggle navigation"
+          aria-expanded={isMobile ? openMobile : open}
         >
           <Menu className="size-4" />
         </Button>
@@ -83,12 +84,12 @@ export function SiteHeader() {
           variant="ghost"
           size="icon"
           className={cn("size-9", !resolvedTheme && "opacity-60")}
-          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-          aria-label="Toggle theme"
+          onClick={() => setTheme(theme === "system" ? "light" : theme === "light" ? "dark" : "system")}
+          aria-label={`Theme: ${theme ?? "system"}. Switch to ${theme === "system" ? "light" : theme === "light" ? "dark" : "system"}`}
+          title={`Theme: ${theme ?? "system"} (click to cycle system, light, dark)`}
           data-tv-item=""
         >
-          <Sun className="size-4 dark:hidden" />
-          <Moon className="hidden size-4 dark:block" />
+          {theme === "system" ? <Monitor className="size-4" /> : resolvedTheme === "dark" ? <Moon className="size-4" /> : <Sun className="size-4" />}
         </Button>
       </div>
     </header>

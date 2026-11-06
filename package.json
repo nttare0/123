@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "data:sync": "tsx scripts/build-data.ts",
-    "test": "tsx scripts/test-country.ts"
+    "test": "tsx scripts/test-country.ts && tsx scripts/test-spotlight.ts && tsx --tsconfig tsconfig.app.json scripts/test-playback.ts"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

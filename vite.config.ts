@@ -10,6 +10,7 @@ export default defineConfig({
     name: "search-console-verification",
     transformIndexHtml: {
       handler: (_html, context) => {
+        if (_html.includes('name="google-site-verification"')) return []
         const mode = context.server?.config.mode ?? "production"
         const token = loadEnv(mode, process.cwd(), "VITE_GOOGLE_SITE_VERIFICATION").VITE_GOOGLE_SITE_VERIFICATION
         return token ? [{ tag: "meta", attrs: { name: "google-site-verification", content: token }, injectTo: "head" as const }] : []

@@ -33,16 +33,23 @@ const NAV = [
 
 export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
   const { pathname, search } = useLocation()
-  const { isMobile, setOpenMobile } = useSidebar()
+  const { isMobile, setOpen, setOpenMobile } = useSidebar()
   const favourites = useLibrary((s) => s.favorites.length)
   const homeCountry = useSettings((s) => s.homeCountry)
   const detectedCountry = useDetectedCountry(!homeCountry)
   const { meta } = useCatalog()
   const code = homeCountry || detectedCountry
   const country = code ? countryInfo(code, meta) : null
-  const closeMobile = React.useCallback(() => setOpenMobile(false), [setOpenMobile])
+  const closeMobile = React.useCallback(() => {
+    setOpenMobile(false)
+    setOpen(false)
+  }, [setOpenMobile, setOpen])
+  const previousRoute = React.useRef(pathname + search)
 
   React.useEffect(() => {
+    const route = pathname + search
+    if (previousRoute.current === route) return
+    previousRoute.current = route
     closeMobile()
   }, [pathname, search, closeMobile])
 
@@ -52,7 +59,7 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
   }
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border/60">
+    <Sidebar collapsible="offcanvas" className="border-r border-sidebar-border/60">
       <SidebarHeader className="gap-5 px-4 pt-6 pb-4 group-data-[collapsible=icon]:px-2">
         <div className="flex items-center gap-2">
           <Link

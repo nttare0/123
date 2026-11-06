@@ -16,10 +16,12 @@ export function Seo() {
       : channel ? `${channel.name} — Watch live | DropTV`
       : pathname === "/favourites" ? "Your favourites | DropTV" : "Page not found | DropTV"
     const description = channel ? `Watch ${channel.name} live on DropTV. Stream availability depends on the broadcaster.`
-      : "Discover public live TV channels from your country and around the world on DropTV."
+      : "Live TV. Less noise. Your channels, worldwide."
     document.title = title
     const set = (selector: string, attribute: string, value: string) => document.querySelector(selector)?.setAttribute(attribute, value)
     set('meta[name="description"]', 'content', description)
+    set('meta[name="twitter:title"]', 'content', title)
+    set('meta[name="twitter:description"]', 'content', description)
     set('meta[property="og:title"]', 'content', title)
     set('meta[property="og:description"]', 'content', description)
     const canonical = `https://droptv.vercel.app${pathname === "/browse" ? "/browse" : pathname}`

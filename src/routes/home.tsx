@@ -1,9 +1,7 @@
 import * as React from "react"
-import { ArrowUpRight } from "lucide-react"
-import { Link } from "react-router-dom"
 
+import { Spotlight } from "@/components/spotlight"
 import { ChannelGrid } from "@/components/channel/channel-grid"
-import { Button } from "@/components/ui/button"
 import { useCatalog } from "@/lib/catalog"
 import { HOME_CATEGORIES, categoryName, countryInfo } from "@/lib/collections"
 import { useDetectedCountry } from "@/lib/country"
@@ -37,23 +35,8 @@ export function HomePage() {
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-7 px-4 py-7 sm:px-6 sm:py-10">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Live TV</p>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Find something to watch.</h1>
-          <p className="max-w-lg text-sm text-muted-foreground">
-            {country
-              ? `${country.flag} Channels from ${country.name}, then picks from around the world.`
-              : "A few good places to start. Explore channels from around the world."}
-          </p>
-          {country && !homeCountry ? (
-            <p className="text-xs text-muted-foreground">Approximate network location · change in Settings</p>
-          ) : null}
-        </div>
-        <Button asChild variant="outline" size="sm" className="gap-2">
-          <Link to="/browse">Browse all <ArrowUpRight className="size-3.5" /></Link>
-        </Button>
-      </header>
+      <h1 className="sr-only">DropTV — live TV and upcoming shows</h1>
+      <Spotlight />
 
       <div className="flex flex-wrap gap-1 border-b pb-4" role="group" aria-label="Channel category">
         {[{ id: "", name: "For you" }, ...HOME_CATEGORIES.map((id) => ({ id, name: categoryName(id, meta) }))].map((item) => (
