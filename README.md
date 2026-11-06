@@ -82,3 +82,21 @@ Homepage and Browse have canonical URLs and metadata, including pre-JavaScript B
 Footer links expose Terms, Privacy, and Cookies/Local Storage notices without requiring the catalog to load. They describe local preferences, the sidebar cookie, Vercel country inference, and direct connections to stream/artwork providers. No analytics or ad trackers were added. The notices are a starting point for the operator to review, not a legal compliance certification; revisit them and consent handling before adding new trackers or changing data practices.
 
 Run `npm test` for country-header validation and cache-safety checks.
+
+## Spotlight, sharing and 404s
+
+Home includes a single-title cinematic hero above the channel grid with upcoming TV from TVmaze's free, keyless `/schedule/web` API (next day's web schedule, not a cinema release feed). The browser fetches directly using TVmaze's CORS support; no Spotlight server, API key or secret is required. Results are normalized/deduplicated and cached in memory for 30 minutes, with shared in-flight requests and retry on failure. Up to eight titles are fetched; only one image/title is displayed at a time with manual previous/next controls. There is no autoplay. Original-size artwork is used when available, in a cinematic, cover-cropped banner with dark readability gradients, a large title, short synopsis and an external Details link. Controls remain below the artwork. The Live news shortcut opens the existing news-channel filter, not a news-headline feed. Spotlight is discovery, not a claim that these titles play here. The previous optional TMDB movie integration was removed to avoid embedding credentials in frontend code.
+
+TVmaze data is attributed under CC BY-SA. API requests and images connect directly to the provider, as disclosed in the privacy notices. Spotlight works with ordinary Vite or static hosting; the independent country-detection feature still uses Vercel. Upstream availability from this sandbox has not been tested because its outbound host allowlist excludes TVmaze. Tests use fixtures and mocked fetch responses, not live data.
+
+Social crawlers receive Open Graph and Twitter large-image tags directly in HTML, with an absolute 1200×630 PNG (`/social-card.png`) and brief text. Browse gets its own static title. Watch URLs currently share the site-wide card; per-channel crawler metadata would require prerendering or server rendering. Some social networks cache previews and may require their sharing debugger to refresh after deployment.
+
+Unknown client routes display the redesigned React 404 without waiting for catalog loading. Vercel's native not-found handling serves `public/404.html` with HTTP 404 for unknown direct URLs; there is intentionally no catch-all rewrite that turns missing URLs into HTTP 200. Verify status and appearance on deployment. `npm test` includes Spotlight date/deduplication and failure-state tests.
+
+## UI defaults and release checks
+
+Navigation is hidden initially and automatically closes on route changes or selection. The header menu toggles it on desktop and mobile; opening it does not trigger the route-close effect. Theme defaults to the device setting, including OS changes; the header button cycles system → light → dark → system. A previously saved explicit theme remains respected.
+
+Playback tests cover secure-source filtering and header restrictions. HTTPS pages no longer fall back to insecure HTTP streams that browsers would block. Unit tests and build checks do not guarantee broadcaster availability or substitute for real-browser HLS, native Safari, fullscreen, mobile and TV-remote testing. Search Console files are prepared, but production deployment, ownership verification, URL Inspection and sitemap submission still require the site owner.
+
+The production HTML now includes the site owner’s Google Search Console verification token directly. The optional build-time environment token is only injected when no static verification tag is present, preventing duplicates. Deploy before attempting ownership verification.

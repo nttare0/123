@@ -7,5 +7,6 @@ const browse = html
   .replace(/(<meta property="og:title" content=")[^"]*/, "$1Browse live TV channels | DropTV")
   .replace(/(<link rel="canonical" href=")[^"]*/, "$1https://droptv.vercel.app/browse")
   .replace(/(<meta property="og:url" content=")[^"]*/, "$1https://droptv.vercel.app/browse")
+  .replace(/(<meta name="twitter:title" content=")[^"]*/, "$1Browse live TV channels | DropTV")
 await mkdir("dist/browse", { recursive: true })
 await writeFile("dist/browse/index.html", browse)

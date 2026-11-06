@@ -30,7 +30,7 @@ export function AppLayout() {
   })
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <AppSidebar onOpenSettings={openSettings} />
       <SidebarInset className="min-w-0">
         <SiteHeader />

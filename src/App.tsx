@@ -1,5 +1,5 @@
 import { ThemeProvider } from "next-themes"
-import { BrowserRouter, Route, Routes } from "react-router-dom"
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom"
 
 import { Seo } from "@/components/seo"
 import { AppLayout } from "@/components/app-layout"
@@ -16,6 +16,11 @@ import { WatchPage } from "@/routes/watch"
 
 function Shell() {
   const { status, progress, error } = useCatalog()
+  const { pathname } = useLocation()
+  // Invalid routes should not depend on a successful catalog download.
+  if (!["/", "/browse", "/favourites"].includes(pathname) && !/^\/watch\/[^/]+$/.test(pathname)) {
+    return <><Seo /><NotFoundPage /></>
+  }
 
   if (status === "loading") return <CatalogSplash progress={progress} />
   if (status === "error")
@@ -39,7 +44,7 @@ function Shell() {
 
 export default function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem storageKey="live-tv-hub:theme">
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="live-tv-hub:theme">
       <TooltipProvider delayDuration={200}>
         <CatalogProvider>
           <BrowserRouter>
