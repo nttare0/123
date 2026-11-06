@@ -110,3 +110,13 @@ The app is now branded **Zepvi**. Its existing deployment URL remains `https://d
 `@vercel/analytics/react` is mounted once at the application root (this is Vite, not Next.js). Enable Web Analytics for the project in the Vercel dashboard and redeploy; the production deployment provides the `/_vercel/insights` script/endpoint. Local development does not prove production ingestion. The integration strips query strings and fragments from analytics URLs and sends no custom events. Privacy and cookies notices disclose the cookieless analytics integration. Review regional consent requirements before launch.
 
 Poster rotation advances every five seconds, pauses while hovered/focused or the tab is hidden, and has an explicit pause/resume button. The full eligible response is used without an eight-item cap; this does not mean the provider supplies every movie or infinite pagination. A 30-minute refresh picks up feed changes. Only the displayed artwork is mounted, avoiding downloading every full-resolution image at once.
+
+## Installable web app (PWA)
+
+Zepvi has a web app manifest, standalone display, regular/maskable PNG icons, an Apple touch icon, and a production-only service worker. No download/install button, custom install prompt, or store link is added to the website.
+
+After deployment over HTTPS, supported desktop/Android browsers can offer **Install app** through their own menu/address bar. On iPhone/iPad, use Safari → Share → Add to Home Screen (Open as Web App if offered). Installation UI and eligibility vary by browser. This is an installed web app, not an APK or native executable.
+
+The worker caches only a small offline screen, favicon and icon. Video and dynamic APIs are never cached by this worker. Offline startup explains that live TV needs a connection; it does not promise offline playback. Network navigation preserves actual 404 responses. Updates do not force a reload during playback, and Vercel serves the worker with revalidation headers.
+
+Use `npm run build` then `npm run preview` to test service-worker registration; it intentionally does not register under ordinary Vite development. Check actual browser installation, standalone launch, offline navigation, reconnect behavior and updates on a deployed HTTPS origin. Previously installed apps are tied to the origin; changing domains can require reinstalling.
