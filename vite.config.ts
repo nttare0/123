@@ -18,41 +18,11 @@ export default defineConfig({
     port: 5173,
     strictPort: false,
     allowedHosts: true,
-    // Same-origin passthrough to the upstream iptv-org API. Keeps "sync latest catalog"
-    // free of CORS surprises in dev and in `vite preview`.
-    proxy: {
-      "/iptv-api": {
-        target: "https://iptv-org.github.io/api",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/iptv-api/, ""),
-      },
-      // Fallback used when the CDN is unreachable (e.g. a sandboxed network):
-      // the GitHub API serves the very same generated files from `gh-pages`.
-      "/github-api": {
-        target: "https://api.github.com",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/github-api/, ""),
-        headers: { "user-agent": "live-tv-hub" },
-      },
-    },
   },
   preview: {
     host: "0.0.0.0",
     port: 4173,
     allowedHosts: true,
-    proxy: {
-      "/iptv-api": {
-        target: "https://iptv-org.github.io/api",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/iptv-api/, ""),
-      },
-      "/github-api": {
-        target: "https://api.github.com",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/github-api/, ""),
-        headers: { "user-agent": "live-tv-hub" },
-      },
-    },
   },
   build: {
     target: "es2022",

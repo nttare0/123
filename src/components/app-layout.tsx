@@ -1,61 +1,46 @@
 import * as React from "react"
-import { Outlet, useNavigate } from "react-router-dom"
+import { Outlet } from "react-router-dom"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { CommandMenu } from "@/components/command-menu"
 import { VideoStage } from "@/components/player/video-stage"
 import { SettingsDialog } from "@/components/settings-dialog"
-import { ShortcutsDialog } from "@/components/shortcuts-dialog"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { useHotkeys } from "@/hooks/use-hotkeys"
 
-export interface LayoutContext {
-  openSearch: () => void
-  openSettings: () => void
-  openShortcuts: () => void
-}
-
 export function AppLayout() {
   const [searchOpen, setSearchOpen] = React.useState(false)
   const [settingsOpen, setSettingsOpen] = React.useState(false)
-  const [shortcutsOpen, setShortcutsOpen] = React.useState(false)
-  const navigate = useNavigate()
 
   const openSearch = React.useCallback(() => setSearchOpen(true), [])
   const openSettings = React.useCallback(() => setSettingsOpen(true), [])
-  const openShortcuts = React.useCallback(() => setShortcutsOpen(true), [])
+
+  React.useEffect(() => {
+    window.addEventListener("lth:open-palette", openSearch)
+    return () => window.removeEventListener("lth:open-palette", openSearch)
+  }, [openSearch])
 
   useHotkeys({
-    "mod+k": () => setSearchOpen(true),
+    "mod+k": openSearch,
     "/": (event) => {
       event.preventDefault()
-      setSearchOpen(true)
+      openSearch()
     },
-    "?": () => setShortcutsOpen(true),
-    h: () => navigate("/"),
-    b: () => navigate("/browse"),
-    f: () => navigate("/favourites"),
   })
-
-  const context = React.useMemo<LayoutContext>(
-    () => ({ openSearch, openSettings, openShortcuts }),
-    [openSearch, openSettings, openShortcuts],
-  )
 
   return (
     <SidebarProvider>
-      <AppSidebar onOpenSettings={openSettings} onOpenShortcuts={openShortcuts} />
+      <AppSidebar onOpenSettings={openSettings} />
       <SidebarInset className="min-w-0">
-        <SiteHeader onOpenSearch={openSearch} onOpenSettings={openSettings} />
-        <Outlet context={context} />
+        <SiteHeader />
+        <Outlet />
       </SidebarInset>
 
       <VideoStage />
 
       <CommandMenu open={searchOpen} onOpenChange={setSearchOpen} onOpenSettings={openSettings} />
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
-      <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
     </SidebarProvider>
   )
 }

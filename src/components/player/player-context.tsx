@@ -2,9 +2,13 @@ import * as React from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
-import { useHls, type AudioOption, type PlaybackStats, type PlayerError, type PlayerStatus, type QualityOption } from "@/hooks/use-hls"
+import {
+  useHls,
+  type PlayerError,
+  type PlayerStatus,
+  type QualityOption,
+} from "@/hooks/use-hls"
 import { useCatalog } from "@/lib/catalog"
-import { countryInfo } from "@/lib/collections"
 import type { Channel, StreamSource } from "@/lib/iptv/types"
 import { selectSources } from "@/lib/playback"
 import { useLibrary } from "@/stores/library"
@@ -30,16 +34,10 @@ interface PlayerContextValue {
   error: PlayerError | null
   levels: QualityOption[]
   currentLevel: number
-  audioTracks: AudioOption[]
-  currentAudioTrack: number
-  stats: PlaybackStats
   isNative: boolean
-  isLive: boolean
-  dvrWindow: number
   mutedByPolicy: boolean
   blockedByPolicy: boolean
   isFullscreen: boolean
-  isPip: boolean
   volume: number
   muted: boolean
   /** Element in the page that the theater surface is glued to. */
@@ -52,16 +50,12 @@ interface PlayerContextValue {
   stop: () => void
   togglePlay: () => void
   selectSource: (index: number) => void
-  nextSource: () => void
   retry: () => void
   setLevel: (index: number) => void
-  setAudioTrack: (id: number) => void
   setVolume: (value: number) => void
   toggleMute: () => void
   unmute: () => void
   toggleFullscreen: () => void
-  togglePip: () => void
-  jumpToLive: () => void
   nextChannel: () => void
   prevChannel: () => void
   setAnchor: (element: HTMLElement | null) => void
@@ -72,7 +66,7 @@ const PlayerContext = React.createContext<PlayerContextValue | null>(null)
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { getChannel, index, meta } = useCatalog()
+  const { getChannel, index } = useCatalog()
   const settings = useSettings()
   const setSettings = useSettings((s) => s.set)
   const addRecent = useLibrary((s) => s.addRecent)
@@ -82,7 +76,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [queue, setQueue] = React.useState<string[]>([])
   const [anchor, setAnchor] = React.useState<HTMLElement | null>(null)
   const [isFullscreen, setIsFullscreen] = React.useState(false)
-  const [isPip, setIsPip] = React.useState(false)
 
   const videoRef = React.useRef<HTMLVideoElement | null>(null)
   const stageRef = React.useRef<HTMLDivElement | null>(null)
@@ -92,16 +85,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const channel = channelId ? (getChannel(channelId) ?? null) : null
 
   const sources = React.useMemo(
-    () => (channel ? selectSources(channel, settings) : []),
-    [channel, settings],
+    () => (channel ? selectSources(channel, settings.hideHeaderOnly) : []),
+    [channel, settings.hideHeaderOnly],
   )
   const safeIndex = sources.length ? Math.min(sourceIndex, sources.length - 1) : 0
   const source = sources[safeIndex] ?? null
 
   const play = React.useCallback(
     (id: string, options?: PlayOptions) => {
-      const found = getChannel(id)
-      if (!found) {
+      if (!getChannel(id)) {
         toast.error("That channel is not in the catalog")
         return
       }
@@ -118,8 +110,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   )
 
   const stop = React.useCallback(() => {
-    const video = videoRef.current
-    video?.pause()
+    videoRef.current?.pause()
     triedRef.current = new Set()
     setChannelId(null)
     setSourceIndex(0)
@@ -137,7 +128,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       if (next === -1) return
 
       toast.warning(`Source ${safeIndex + 1} failed — trying source ${next + 1}`, {
-        description: `${channel.name} · ${fatal.title.toLowerCase()}`,
+        description: channel.name,
         duration: 4000,
       })
       setSourceIndex(next)
@@ -156,7 +147,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const togglePlay = React.useCallback(() => {
     const video = videoRef.current
     if (!video || !channel) return
-    if (video.paused) void video.play().catch(() => undefined)
+    if (video.paused) video.play().catch(() => undefined)
     else video.pause()
   }, [channel])
 
@@ -164,13 +155,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     triedRef.current = new Set()
     setSourceIndex(i)
   }, [])
-
-  const nextSource = React.useCallback(() => {
-    if (sources.length < 2) return
-    triedRef.current = new Set()
-    setSourceIndex((i) => (i + 1) % sources.length)
-    toast.info(`Switched to source ${(safeIndex + 1) % sources.length + 1} of ${sources.length}`)
-  }, [safeIndex, sources.length])
 
   /* --- volume --------------------------------------------------------- */
   React.useEffect(() => {
@@ -181,7 +165,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, [channelId, hls.mutedByPolicy, settings.muted, settings.volume, sourceIndex])
 
   const setVolume = React.useCallback(
-    (value: number) => setSettings({ volume: Math.min(1, Math.max(0, value)), muted: value === 0 }),
+    (value: number) =>
+      setSettings({ volume: Math.min(1, Math.max(0, value)), muted: value === 0 }),
     [setSettings],
   )
   const toggleMute = React.useCallback(
@@ -194,49 +179,21 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setSettings({ muted: false, volume: settings.volume || 0.8 })
   }, [setSettings, settings.volume])
 
-  /* --- fullscreen / pip ---------------------------------------------- */
+  /* --- fullscreen ----------------------------------------------------- */
   const toggleFullscreen = React.useCallback(() => {
     const stage = stageRef.current
     if (!stage) return
-    if (document.fullscreenElement) void document.exitFullscreen()
-    else void stage.requestFullscreen?.().catch(() => toast.error("Fullscreen was blocked"))
-  }, [])
-
-  const togglePip = React.useCallback(async () => {
-    const video = videoRef.current
-    if (!video) return
-    try {
-      if (document.pictureInPictureElement) await document.exitPictureInPicture()
-      else await video.requestPictureInPicture()
-    } catch {
-      toast.error("Picture-in-picture is not available in this browser")
-    }
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => undefined)
+    else
+      stage
+        .requestFullscreen?.()
+        .catch(() => toast.error("Fullscreen was blocked by the browser"))
   }, [])
 
   React.useEffect(() => {
     const onFullscreen = () => setIsFullscreen(Boolean(document.fullscreenElement))
     document.addEventListener("fullscreenchange", onFullscreen)
     return () => document.removeEventListener("fullscreenchange", onFullscreen)
-  }, [])
-
-  React.useEffect(() => {
-    const video = videoRef.current
-    if (!video) return
-    const enter = () => setIsPip(true)
-    const leave = () => setIsPip(false)
-    video.addEventListener("enterpictureinpicture", enter)
-    video.addEventListener("leavepictureinpicture", leave)
-    return () => {
-      video.removeEventListener("enterpictureinpicture", enter)
-      video.removeEventListener("leavepictureinpicture", leave)
-    }
-  }, [channelId])
-
-  const jumpToLive = React.useCallback(() => {
-    const video = videoRef.current
-    if (!video || !video.seekable.length) return
-    video.currentTime = video.seekable.end(video.seekable.length - 1) - 0.5
-    void video.play().catch(() => undefined)
   }, [])
 
   /* --- channel stepping ---------------------------------------------- */
@@ -269,11 +226,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     try {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: channel.name,
-        artist: countryInfo(channel.country, meta).name,
-        album: "Live TV Hub",
-        artwork: channel.logo
-          ? [{ src: channel.logo, sizes: "512x512", type: "image/png" }]
-          : [],
+        artist: "Live TV Hub",
+        album: "Live TV",
+        artwork: channel.logo ? [{ src: channel.logo, sizes: "512x512", type: "image/png" }] : [],
       })
       navigator.mediaSession.setActionHandler("play", () => togglePlay())
       navigator.mediaSession.setActionHandler("pause", () => togglePlay())
@@ -282,10 +237,13 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     } catch {
       /* media metadata is best-effort */
     }
-  }, [channel, meta, nextChannel, prevChannel, togglePlay])
+  }, [channel, nextChannel, prevChannel, togglePlay])
 
-  const onWatch = location.pathname.startsWith("/watch/")
-  const mode: PlayerMode = !channelId ? "hidden" : onWatch ? "theater" : "mini"
+  const mode: PlayerMode = !channelId
+    ? "hidden"
+    : location.pathname.startsWith("/watch/")
+      ? "theater"
+      : "mini"
 
   const value = React.useMemo<PlayerContextValue>(
     () => ({
@@ -299,16 +257,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       error: hls.error,
       levels: hls.levels,
       currentLevel: hls.currentLevel,
-      audioTracks: hls.audioTracks,
-      currentAudioTrack: hls.currentAudioTrack,
-      stats: hls.stats,
       isNative: hls.isNative,
-      isLive: hls.isLive,
-      dvrWindow: hls.dvrWindow,
       mutedByPolicy: hls.mutedByPolicy,
       blockedByPolicy: hls.blockedByPolicy,
       isFullscreen,
-      isPip,
       volume: settings.volume,
       muted: settings.muted || hls.mutedByPolicy,
       anchor,
@@ -318,16 +270,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       stop,
       togglePlay,
       selectSource,
-      nextSource,
       retry: hls.retry,
       setLevel: hls.setLevel,
-      setAudioTrack: hls.setAudioTrack,
       setVolume,
       toggleMute,
       unmute,
       toggleFullscreen,
-      togglePip,
-      jumpToLive,
       nextChannel,
       prevChannel,
       setAnchor,
@@ -338,26 +286,22 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       effectiveQueue,
       hls,
       isFullscreen,
-      isPip,
       mode,
       nextChannel,
       play,
       prevChannel,
       safeIndex,
+      selectSource,
       setVolume,
       settings.muted,
       settings.volume,
       source,
       sources,
       stop,
+      toggleFullscreen,
       toggleMute,
       togglePlay,
       unmute,
-      toggleFullscreen,
-      togglePip,
-      jumpToLive,
-      nextSource,
-      selectSource,
     ],
   )
 

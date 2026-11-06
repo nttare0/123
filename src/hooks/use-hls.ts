@@ -10,36 +10,10 @@ export interface QualityOption {
   bitrate: number
 }
 
-export interface AudioOption {
-  id: number
-  name: string
-  lang?: string
-}
-
 export interface PlayerError {
   kind: "network" | "media" | "unsupported" | "unknown"
   title: string
   detail: string
-}
-
-export interface PlaybackStats {
-  bitrate: number
-  height: number
-  width: number
-  dropped: number
-  total: number
-  bufferAhead: number
-  latency: number
-}
-
-const EMPTY_STATS: PlaybackStats = {
-  bitrate: 0,
-  height: 0,
-  width: 0,
-  dropped: 0,
-  total: 0,
-  bufferAhead: 0,
-  latency: 0,
 }
 
 export interface UseHlsOptions {
@@ -52,7 +26,6 @@ export interface UseHlsOptions {
 
 const HLS_CONFIG: Partial<HlsConfig> = {
   enableWorker: true,
-  lowLatencyMode: false,
   backBufferLength: 30,
   manifestLoadingTimeOut: 12_000,
   manifestLoadingMaxRetry: 2,
@@ -63,7 +36,7 @@ const HLS_CONFIG: Partial<HlsConfig> = {
   fragLoadingMaxRetry: 3,
   fragLoadingRetryDelay: 1_000,
   startFragPrefetch: true,
-  // Live TV: stay close to the live edge but keep a little slack for shaky links.
+  // Live TV: stay close to the live edge but keep slack for shaky links.
   liveSyncDurationCount: 3,
   liveMaxLatencyDurationCount: 10,
 }
@@ -73,14 +46,9 @@ export function useHls({ src, videoRef, autoPlay = true, onFatal }: UseHlsOption
   const [error, setError] = React.useState<PlayerError | null>(null)
   const [levels, setLevels] = React.useState<QualityOption[]>([])
   const [currentLevel, setCurrentLevel] = React.useState(-1)
-  const [audioTracks, setAudioTracks] = React.useState<AudioOption[]>([])
-  const [currentAudioTrack, setCurrentAudioTrack] = React.useState(-1)
-  const [stats, setStats] = React.useState<PlaybackStats>(EMPTY_STATS)
   const [isNative, setIsNative] = React.useState(false)
   const [mutedByPolicy, setMutedByPolicy] = React.useState(false)
   const [blockedByPolicy, setBlockedByPolicy] = React.useState(false)
-  const [isLive, setIsLive] = React.useState(true)
-  const [dvrWindow, setDvrWindow] = React.useState(0)
   const [nonce, setNonce] = React.useState(0)
 
   const hlsRef = React.useRef<Hls | null>(null)
@@ -100,22 +68,13 @@ export function useHls({ src, videoRef, autoPlay = true, onFatal }: UseHlsOption
   const attemptPlay = React.useCallback(() => {
     const video = videoRef.current
     if (!video || !autoPlay) return
-    const promise = video.play()
-    if (!promise?.catch) return
-    promise.catch(() => {
+    video.play()?.catch(() => {
       // Browsers only allow muted autoplay without a gesture — retry, then say so.
       video.muted = true
-      const retry = video.play()
-      if (!retry?.catch) {
-        setMutedByPolicy(true)
-        return
-      }
-      retry
-        .then(() => setMutedByPolicy(true))
-        .catch(() => {
-          setMutedByPolicy(false)
-          setBlockedByPolicy(true)
-        })
+      video
+        .play()
+        ?.then(() => setMutedByPolicy(true))
+        .catch(() => setBlockedByPolicy(true))
     })
   }, [autoPlay, videoRef])
 
@@ -126,7 +85,6 @@ export function useHls({ src, videoRef, autoPlay = true, onFatal }: UseHlsOption
       setStatus("idle")
       setError(null)
       setLevels([])
-      setStats(EMPTY_STATS)
       return
     }
 
@@ -135,10 +93,7 @@ export function useHls({ src, videoRef, autoPlay = true, onFatal }: UseHlsOption
     setStatus("loading")
     setError(null)
     setLevels([])
-    setAudioTracks([])
     setCurrentLevel(-1)
-    setCurrentAudioTrack(-1)
-    setStats(EMPTY_STATS)
     setMutedByPolicy(false)
     setBlockedByPolicy(false)
 
@@ -151,32 +106,29 @@ export function useHls({ src, videoRef, autoPlay = true, onFatal }: UseHlsOption
 
       hls.on(Events.MANIFEST_PARSED, () => {
         if (!hls) return
-        const options: QualityOption[] = hls.levels
-          .map((level, index) => ({
-            index,
-            height: level.height,
-            bitrate: level.bitrate,
-            label: level.name || (level.height ? `${level.height}p` : `${Math.round(level.bitrate / 1000)} kbps`),
-          }))
-          .filter((option, index, all) =>
-            all.findIndex((o) => o.height === option.height && o.bitrate === option.bitrate) === index,
-          )
-          .sort((a, b) => b.height - a.height || b.bitrate - a.bitrate)
-        setLevels(options)
+        setLevels(
+          hls.levels
+            .map((level, index) => ({
+              index,
+              height: level.height,
+              bitrate: level.bitrate,
+              label:
+                level.name ||
+                (level.height
+                  ? `${level.height}p`
+                  : `${Math.round(level.bitrate / 1000)} kbps`),
+            }))
+            .filter(
+              (option, index, all) =>
+                all.findIndex((o) => o.height === option.height && o.bitrate === option.bitrate) ===
+                index,
+            )
+            .sort((a, b) => b.height - a.height || b.bitrate - a.bitrate),
+        )
         attemptPlay()
       })
 
       hls.on(Events.LEVEL_SWITCHED, (_event, data) => setCurrentLevel(data.level))
-
-      hls.on(Events.AUDIO_TRACKS_UPDATED, (_event, data) => {
-        setAudioTracks(
-          data.audioTracks.map((track, index) => ({
-            id: track.id ?? index,
-            name: track.name || track.lang || `Track ${index + 1}`,
-            lang: track.lang,
-          })),
-        )
-      })
 
       hls.on(Events.ERROR, (_event, data) => {
         if (!data.fatal) return
@@ -208,7 +160,7 @@ export function useHls({ src, videoRef, autoPlay = true, onFatal }: UseHlsOption
                 : "This stream cannot be played here",
           detail:
             kind === "network"
-              ? "The broadcaster's server did not respond. It may be offline, geo-blocked or refusing browser requests."
+              ? "The broadcaster's server did not respond. It may be offline, geo-blocked, or refusing browser requests."
               : data.error?.message || data.details || "The media pipeline failed and could not recover.",
         })
       })
@@ -254,16 +206,13 @@ export function useHls({ src, videoRef, autoPlay = true, onFatal }: UseHlsOption
     }
     const onWaiting = () => setStatus((s) => (s === "error" ? s : "buffering"))
     const onPause = () => setStatus((s) => (s === "error" || s === "buffering" ? s : "paused"))
-    const onLoaded = () => {
-      setStatus((s) => (s === "loading" ? "buffering" : s))
-      setIsLive(!Number.isFinite(video.duration))
-    }
+    const onLoaded = () => setStatus((s) => (s === "loading" ? "buffering" : s))
     const onError = () => {
       if (isNative) {
         fail({
           kind: "network",
           title: "Stream unreachable",
-          detail: "Safari could not load this playlist. It may be offline or geo-blocked.",
+          detail: "This playlist could not be loaded. It may be offline or geo-blocked.",
         })
       }
     }
@@ -282,50 +231,11 @@ export function useHls({ src, videoRef, autoPlay = true, onFatal }: UseHlsOption
     }
   }, [fail, isNative, src, videoRef])
 
-  /* --- stats + DVR window -------------------------------------------- */
-  React.useEffect(() => {
-    if (status !== "playing" && status !== "buffering") return
-    const video = videoRef.current
-    if (!video) return
-
-    const tick = () => {
-      const hls = hlsRef.current
-      const quality = video.getVideoPlaybackQuality?.()
-      const level = hls && currentLevel >= 0 ? hls.levels[currentLevel] : undefined
-      const buffered = video.buffered
-      setStats({
-        bitrate: hls?.bandwidthEstimate ?? 0,
-        height: level?.height ?? video.videoHeight,
-        width: level?.width ?? video.videoWidth,
-        dropped: quality?.droppedVideoFrames ?? 0,
-        total: quality?.totalVideoFrames ?? 0,
-        bufferAhead: buffered.length ? Math.max(0, buffered.end(buffered.length - 1) - video.currentTime) : 0,
-        latency: hls?.latency ?? 0,
-      })
-      const seekable = video.seekable
-      setDvrWindow(seekable.length ? seekable.end(seekable.length - 1) - seekable.start(0) : 0)
-    }
-
-    tick()
-    const id = window.setInterval(tick, 1000)
-    return () => window.clearInterval(id)
-  }, [currentLevel, status, videoRef])
-
-  const setLevel = React.useCallback(
-    (index: number) => {
-      const hls = hlsRef.current
-      if (!hls) return
-      hls.currentLevel = index
-      setCurrentLevel(index)
-    },
-    [],
-  )
-
-  const setAudioTrack = React.useCallback((id: number) => {
+  const setLevel = React.useCallback((index: number) => {
     const hls = hlsRef.current
     if (!hls) return
-    hls.audioTrack = id
-    setCurrentAudioTrack(id)
+    hls.currentLevel = index
+    setCurrentLevel(index)
   }, [])
 
   const retry = React.useCallback(() => {
@@ -341,13 +251,7 @@ export function useHls({ src, videoRef, autoPlay = true, onFatal }: UseHlsOption
     levels,
     currentLevel,
     setLevel,
-    audioTracks,
-    currentAudioTrack,
-    setAudioTrack,
-    stats,
     isNative,
-    isLive,
-    dvrWindow,
     mutedByPolicy,
     blockedByPolicy,
     retry,

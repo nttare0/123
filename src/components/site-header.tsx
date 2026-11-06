@@ -1,138 +1,95 @@
-import * as React from "react"
-import { Heart, Search, Settings2, Shuffle } from "lucide-react"
-import { Link, useLocation, useNavigate } from "react-router-dom"
+import { Command, Menu, Moon, Search, Sun } from "lucide-react"
+import { useNavigate } from "react-router-dom"
+import { useTheme } from "next-themes"
 
-import { ChannelLogo } from "@/components/channel/channel-logo"
-import { usePlayer } from "@/components/player/player-context"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Kbd } from "@/components/ui/kbd"
 import { Separator } from "@/components/ui/separator"
-import { SidebarTrigger } from "@/components/ui/sidebar"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { useCatalog } from "@/lib/catalog"
-import { filterChannels } from "@/lib/search"
-import { resolveProtocol, useSettings } from "@/stores/settings"
+import { useSidebar } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
 
-const TITLES: [RegExp, string][] = [
-  [/^\/$/, "Home"],
-  [/^\/browse/, "Browse"],
-  [/^\/favourites/, "Favourites"],
-  [/^\/my-streams/, "My streams"],
-  [/^\/watch\//, "Now watching"],
-]
-
-export function SiteHeader({
-  onOpenSearch,
-  onOpenSettings,
-}: {
-  onOpenSearch: () => void
-  onOpenSettings: () => void
-}) {
-  const location = useLocation()
+export function SiteHeader() {
   const navigate = useNavigate()
-  const { index, meta } = useCatalog()
-  const settings = useSettings()
-  const { channel, status } = usePlayer()
+  const { resolvedTheme, setTheme } = useTheme()
+  const { setOpenMobile } = useSidebar()
 
-  const title = React.useMemo(
-    () => TITLES.find(([pattern]) => pattern.test(location.pathname))?.[1] ?? "Live TV Hub",
-    [location.pathname],
-  )
-
-  const playRandom = React.useCallback(() => {
-    const { channels } = filterChannels(
-      index,
-      {
-        protocol: resolveProtocol(settings.protocol),
-        hideHeaderOnly: settings.hideHeaderOnly,
-        hideGeoBlocked: settings.hideGeoBlocked,
-        sort: "relevance",
-      },
-      meta,
-    )
-    const pool = channels.slice(0, Math.min(400, channels.length))
-    if (!pool.length) return
-    const pick = pool[Math.floor(Math.random() * pool.length)]
-    navigate(`/watch/${encodeURIComponent(pick.id)}`)
-  }, [index, meta, navigate, settings.hideGeoBlocked, settings.hideHeaderOnly, settings.protocol])
-
-  const showNowPlaying = channel && !location.pathname.startsWith("/watch/")
+  const submit = (value: string) => {
+    const query = value.trim()
+    navigate(query ? `/browse?q=${encodeURIComponent(query)}` : "/browse")
+  }
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b bg-background/85 px-3 backdrop-blur-md sm:px-5">
-      <SidebarTrigger className="-ml-1.5" />
-      <Separator orientation="vertical" className="mr-1 h-4" />
-      <span className="hidden text-sm font-medium tracking-tight text-muted-foreground sm:inline">
-        {title}
-      </span>
-
-      {showNowPlaying ? (
-        <Link
-          to={`/watch/${encodeURIComponent(channel.id)}`}
-          className="ml-1 flex min-w-0 max-w-56 items-center gap-2 rounded-full border bg-card py-1 pr-3 pl-1 transition-colors hover:bg-accent"
-        >
-          <ChannelLogo channel={channel} className="size-6 shrink-0 rounded-full" />
-          <span className="min-w-0">
-            <span className="flex items-center gap-1.5">
-              <span
-                className={`size-1.5 shrink-0 rounded-full ${
-                  status === "playing" ? "animate-live-pulse bg-red-500" : "bg-muted-foreground/50"
-                }`}
-              />
-              <span className="truncate text-xs font-medium">{channel.name}</span>
-            </span>
-          </span>
-        </Link>
-      ) : null}
-
-      <div className="ml-auto flex items-center gap-1.5">
+    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-xl">
+      <div className="flex h-14 items-center gap-2 px-3 sm:px-4">
         <Button
-          variant="outline"
-          className="h-9 w-40 justify-start gap-2 text-muted-foreground shadow-xs sm:w-56 md:w-72"
-          onClick={onOpenSearch}
+          variant="ghost"
+          size="icon"
+          className="size-9 md:hidden"
+          onClick={() => setOpenMobile(true)}
+          aria-label="Open navigation"
         >
-          <Search className="size-4" />
-          <span className="hidden truncate text-sm font-normal sm:inline">Search channels…</span>
-          <Kbd className="ml-auto hidden sm:inline-flex">Ctrl K</Kbd>
+          <Menu className="size-4" />
         </Button>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="sm:hidden" onClick={onOpenSearch} aria-label="Search">
-              <Search />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Search</TooltipContent>
-        </Tooltip>
+        <form
+          className="relative hidden min-w-0 flex-1 items-center sm:flex sm:max-w-md"
+          role="search"
+          onSubmit={(event) => {
+            event.preventDefault()
+            submit((event.currentTarget.elements.namedItem("q") as HTMLInputElement)?.value ?? "")
+          }}
+        >
+          <Search
+            className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <Input
+            name="q"
+            type="search"
+            placeholder="Search channels"
+            className="h-9 rounded-lg pr-16 pl-8"
+            data-tv-item=""
+          />
+          <span className="pointer-events-none absolute top-1/2 right-2 hidden -translate-y-1/2 items-center gap-0.5 text-muted-foreground lg:flex">
+            <Kbd>⌘</Kbd>
+            <Kbd>K</Kbd>
+          </span>
+        </form>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={playRandom} aria-label="Play a random channel">
-              <Shuffle />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Surprise me</TooltipContent>
-        </Tooltip>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 gap-2 text-muted-foreground sm:hidden"
+          onClick={() => navigate("/browse")}
+        >
+          <Search className="size-4" />
+          Search
+        </Button>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" asChild aria-label="Favourites">
-              <Link to="/favourites">
-                <Heart />
-              </Link>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Favourites</TooltipContent>
-        </Tooltip>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="ml-auto size-9"
+          onClick={() => window.dispatchEvent(new CustomEvent("lth:open-palette"))}
+          aria-label="Open command menu"
+        >
+          <Command className="size-4" />
+        </Button>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={onOpenSettings} aria-label="Settings">
-              <Settings2 />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Settings</TooltipContent>
-        </Tooltip>
+        <Separator orientation="vertical" className="mr-0.5 h-5" />
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn("size-9", !resolvedTheme && "opacity-60")}
+          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+          aria-label="Toggle theme"
+          data-tv-item=""
+        >
+          <Sun className="size-4 dark:hidden" />
+          <Moon className="hidden size-4 dark:block" />
+        </Button>
       </div>
     </header>
   )

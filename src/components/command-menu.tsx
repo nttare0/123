@@ -1,19 +1,7 @@
 import * as React from "react"
-import {
-  Compass,
-  CornerDownLeft,
-  Heart,
-  Monitor,
-  Moon,
-  Radio,
-  RefreshCw,
-  Settings2,
-  Shuffle,
-  Sun,
-} from "lucide-react"
+import { Compass, CornerDownLeft, Heart, Home, Moon, Settings2, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useNavigate } from "react-router-dom"
-import { toast } from "sonner"
 
 import { ChannelLogo } from "@/components/channel/channel-logo"
 import {
@@ -28,8 +16,7 @@ import {
 } from "@/components/ui/command"
 import { useCatalog } from "@/lib/catalog"
 import { countryInfo } from "@/lib/collections"
-import { filterChannels, searchChannels } from "@/lib/search"
-import { resolveProtocol, useSettings } from "@/stores/settings"
+import { searchChannels } from "@/lib/search"
 import { useLibrary } from "@/stores/library"
 
 interface CommandMenuProps {
@@ -41,20 +28,18 @@ interface CommandMenuProps {
 export function CommandMenu({ open, onOpenChange, onOpenSettings }: CommandMenuProps) {
   const [query, setQuery] = React.useState("")
   const navigate = useNavigate()
-  const { index, meta, sync, syncing } = useCatalog()
-  const settings = useSettings()
-  const { setTheme } = useTheme()
+  const { index, meta } = useCatalog()
+  const { resolvedTheme, setTheme } = useTheme()
   const favorites = useLibrary((s) => s.favorites)
 
   React.useEffect(() => {
     if (!open) setQuery("")
   }, [open])
 
-  const results = React.useMemo(() => {
-    const q = query.trim()
-    if (!q) return []
-    return searchChannels(index, q, 8)
-  }, [index, query])
+  const results = React.useMemo(
+    () => (query.trim() ? searchChannels(index, query.trim(), 8) : []),
+    [index, query],
+  )
 
   const favouriteHits = React.useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -65,21 +50,6 @@ export function CommandMenu({ open, onOpenChange, onOpenSettings }: CommandMenuP
       .filter((c) => c.name.toLowerCase().includes(q))
       .slice(0, 4)
   }, [favorites, index.byId, query])
-
-  const suggested = React.useMemo(() => {
-    if (query.trim()) return []
-    const { channels } = filterChannels(
-      index,
-      {
-        countries: settings.homeCountry ? [settings.homeCountry] : undefined,
-        protocol: resolveProtocol(settings.protocol),
-        hideHeaderOnly: settings.hideHeaderOnly,
-        sort: "relevance",
-      },
-      meta,
-    )
-    return channels.slice(0, 5)
-  }, [index, meta, query, settings.hideHeaderOnly, settings.homeCountry, settings.protocol])
 
   const go = React.useCallback(
     (path: string) => {
@@ -104,40 +74,41 @@ export function CommandMenu({ open, onOpenChange, onOpenSettings }: CommandMenuP
       open={open}
       onOpenChange={onOpenChange}
       title="Search Live TV Hub"
-      description="Search channels, countries and categories, or run a command."
+      description="Search channels or run a command."
       className="top-[20%] translate-y-0 sm:max-w-xl"
     >
       <CommandInput
-        placeholder="Search 10,000+ channels, countries, categories…"
+        placeholder="Search channels…"
         value={query}
         onValueChange={setQuery}
       />
       <CommandList>
-        <CommandEmpty>No channels found. Try a country, a category or a shorter term.</CommandEmpty>
+        <CommandEmpty>No channels found.</CommandEmpty>
 
         {results.length ? (
-          <CommandGroup heading={`Channels · ${results.length} best matches`}>
-            {results.map((channel) => (
-              <CommandItem
-                key={channel.id}
-                value={`channel-${channel.id}`}
-                onSelect={() => playChannel(channel.id, resultQueue)}
-                className="gap-3"
-              >
-                <ChannelLogo channel={channel} className="size-8 shrink-0 rounded" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{channel.name}</span>
-                  <span className="block truncate text-xs text-muted-foreground">
-                    {countryInfo(channel.country, meta).flag}{" "}
-                    {countryInfo(channel.country, meta).name} ·{" "}
-                    {channel.sources.length} {channel.sources.length === 1 ? "source" : "sources"}
+          <CommandGroup heading="Channels">
+            {results.map((channel) => {
+              const country = countryInfo(channel.country, meta)
+              return (
+                <CommandItem
+                  key={channel.id}
+                  value={`channel-${channel.id}`}
+                  onSelect={() => playChannel(channel.id, resultQueue)}
+                  className="gap-3"
+                >
+                  <ChannelLogo channel={channel} className="size-8 shrink-0 rounded" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium">{channel.name}</span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {country.flag} {country.name}
+                    </span>
                   </span>
-                </span>
-                <CommandShortcut>
-                  <CornerDownLeft className="size-3" />
-                </CommandShortcut>
-              </CommandItem>
-            ))}
+                  <CommandShortcut>
+                    <CornerDownLeft className="size-3" />
+                  </CommandShortcut>
+                </CommandItem>
+              )
+            })}
           </CommandGroup>
         ) : null}
 
@@ -160,60 +131,27 @@ export function CommandMenu({ open, onOpenChange, onOpenSettings }: CommandMenuP
           </>
         ) : null}
 
-        {suggested.length ? (
-          <CommandGroup heading={`Popular in ${countryInfo(settings.homeCountry, meta).name}`}>
-            {suggested.map((channel) => (
-              <CommandItem
-                key={`sug-${channel.id}`}
-                value={`sug-${channel.id}`}
-                onSelect={() => playChannel(channel.id, suggested.map((c) => c.id))}
-                className="gap-3"
-              >
-                <ChannelLogo channel={channel} className="size-6 shrink-0 rounded" />
-                <span className="truncate">{channel.name}</span>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        ) : null}
-
         <CommandSeparator />
         <CommandGroup heading="Navigate">
           <CommandItem value="nav-home" onSelect={() => go("/")}>
-            <Radio /> Home
+            <Home /> Home
           </CommandItem>
           <CommandItem value="nav-browse" onSelect={() => go("/browse")}>
-            <Compass /> Browse every channel
-            <CommandShortcut>B</CommandShortcut>
+            <Compass /> Browse
           </CommandItem>
           <CommandItem value="nav-favourites" onSelect={() => go("/favourites")}>
             <Heart /> Favourites
-            <CommandShortcut>F</CommandShortcut>
-          </CommandItem>
-          <CommandItem value="nav-mystreams" onSelect={() => go("/my-streams")}>
-            <Radio /> My streams
           </CommandItem>
         </CommandGroup>
 
         <CommandSeparator />
         <CommandGroup heading="Actions">
           <CommandItem
-            value="action-random"
-            onSelect={() => {
-              const pool = results.length ? results : index.channels.slice(0, 500)
-              const pick = pool[Math.floor(Math.random() * pool.length)]
-              if (pick) playChannel(pick.id, pool.map((c) => c.id))
-            }}
+            value="action-theme"
+            onSelect={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
           >
-            <Shuffle /> Play something random
-          </CommandItem>
-          <CommandItem value="action-theme-light" onSelect={() => setTheme("light")}>
-            <Sun /> Light theme
-          </CommandItem>
-          <CommandItem value="action-theme-dark" onSelect={() => setTheme("dark")}>
-            <Moon /> Dark theme
-          </CommandItem>
-          <CommandItem value="action-theme-system" onSelect={() => setTheme("system")}>
-            <Monitor /> Match system theme
+            {resolvedTheme === "dark" ? <Sun /> : <Moon />}
+            {resolvedTheme === "dark" ? "Light theme" : "Dark theme"}
           </CommandItem>
           <CommandItem
             value="action-settings"
@@ -222,23 +160,7 @@ export function CommandMenu({ open, onOpenChange, onOpenSettings }: CommandMenuP
               onOpenSettings()
             }}
           >
-            <Settings2 /> Playback settings
-          </CommandItem>
-          <CommandItem
-            value="action-sync"
-            disabled={syncing}
-            onSelect={() => {
-              onOpenChange(false)
-              toast.promise(sync(), {
-                loading: "Syncing the iptv-org catalog…",
-                success: (n) => `Catalog synced — ${n.toLocaleString()} channels`,
-                error: "Could not reach iptv-org. The bundled snapshot is still in use.",
-              })
-            }}
-          >
-            <RefreshCw className={syncing ? "animate-spin" : undefined} />
-            Sync latest catalog
-            <CommandShortcut>~18 MB</CommandShortcut>
+            <Settings2 /> Settings
           </CommandItem>
         </CommandGroup>
       </CommandList>
