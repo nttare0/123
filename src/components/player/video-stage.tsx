@@ -126,7 +126,7 @@ export function VideoStage() {
 
       {channel ? (
         <>
-          <PlayerOverlay mode={effective} />
+          <PlayerOverlay mode={effective} idle={idle} onWake={wake} />
           <PlayerControls mode={effective} idle={idle} onWake={wake} />
         </>
       ) : null}

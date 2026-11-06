@@ -1,81 +1,57 @@
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
 
-export type ChannelView = "grid" | "list"
-export type StreamProtocolPolicy = "auto" | "https" | "any"
-
 export interface SettingsState {
   /** Country the home screen is built around. */
   homeCountry: string
   /** Start playback as soon as a channel is opened. */
   autoplay: boolean
-  /**
-   * `auto` drops plain-http streams on https pages (they would be blocked as
-   * mixed content), `https` always hides them, `any` shows everything.
-   */
-  protocol: StreamProtocolPolicy
-  /** Hide channels whose streams only work with a custom Referer/User-Agent. */
-  hideHeaderOnly: boolean
-  /** Hide streams the project marks as geo-blocked. */
-  hideGeoBlocked: boolean
-  /** Hide streams the project marks as not broadcasting 24/7. */
-  hideNot247: boolean
-  /** Show the bitrate / dropped-frames readout on the player. */
-  showStats: boolean
-  /** Automatically try the next source when one fails. */
+  /** Try the next mirror automatically when a source fails. */
   autoFailover: boolean
+  /** Hide sources that need a Referer/User-Agent a browser cannot set. */
+  hideHeaderOnly: boolean
   volume: number
   muted: boolean
-  view: ChannelView
   set: (patch: Partial<SettingsState>) => void
-  reset: () => void
 }
 
-export const DEFAULT_SETTINGS = {
-  homeCountry: "RW",
+const DEFAULTS = {
+  homeCountry: "",
   autoplay: true,
-  protocol: "auto" as StreamProtocolPolicy,
-  hideHeaderOnly: true,
-  hideGeoBlocked: false,
-  hideNot247: false,
-  showStats: false,
   autoFailover: true,
+  hideHeaderOnly: true,
   volume: 1,
   muted: false,
-  view: "grid" as ChannelView,
 }
+
+const KEYS = Object.keys(DEFAULTS) as (keyof typeof DEFAULTS)[]
 
 export const useSettings = create<SettingsState>()(
   persist(
     (set) => ({
-      ...DEFAULT_SETTINGS,
+      ...DEFAULTS,
       set: (patch) => set(patch),
-      reset: () => set({ ...DEFAULT_SETTINGS }),
     }),
     {
       name: "live-tv-hub:settings",
-      version: 1,
+      version: 3,
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        homeCountry: state.homeCountry,
-        autoplay: state.autoplay,
-        protocol: state.protocol,
-        hideHeaderOnly: state.hideHeaderOnly,
-        hideGeoBlocked: state.hideGeoBlocked,
-        hideNot247: state.hideNot247,
-        showStats: state.showStats,
-        autoFailover: state.autoFailover,
-        volume: state.volume,
-        muted: state.muted,
-        view: state.view,
-      }),
+      partialize: (state) => Object.fromEntries(KEYS.map((k) => [k, state[k]])),
+      // Drop keys from older versions of the app.
+      migrate: (persisted) => {
+        const raw = (persisted ?? {}) as Record<string, unknown>
+        // Rwanda was the old hard-coded default, not a detected location.
+        if (raw.homeCountry === "RW") raw.homeCountry = ""
+        return Object.fromEntries(KEYS.filter((k) => k in raw).map((k) => [k, raw[k]]))
+      },
     },
   ),
 )
 
-/** Protocol filter resolved against the current page, used by the catalog filters. */
-export function resolveProtocol(policy: StreamProtocolPolicy): "https" | "any" {
-  if (policy === "https") return "https"
-  if (policy === "any") return "any"
-  return typeof window !== "undefined" && window.isSecureContext ? "https" : "any"
+/**
+ * Plain-http media is blocked as mixed content on an https page, so those
+ * sources are only worth listing when the page itself is http.
+ */
+export function httpsOnly(): boolean {
+  return typeof window !== "undefined" && window.isSecureContext
 }

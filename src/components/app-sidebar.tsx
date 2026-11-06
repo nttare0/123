@@ -1,29 +1,8 @@
 import * as React from "react"
-import {
-  Compass,
-  Github,
-  Heart,
-  Home,
-  Keyboard,
-  Monitor,
-  Moon,
-  Radio,
-  Settings,
-  Sun,
-  Tv,
-} from "lucide-react"
-import { useTheme } from "next-themes"
+import { ArrowUpRight, Compass, Heart, House, MapPin, Search, Settings2, TvMinimal, X } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
 import {
   Sidebar,
   SidebarContent,
@@ -33,182 +12,121 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-  SidebarSeparator,
+  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { useCatalog } from "@/lib/catalog"
-import { categoryIcon, countryInfo, EAST_AFRICA, FEATURED_CATEGORIES } from "@/lib/collections"
-import { compactNumber, formatDate } from "@/lib/format"
+import { countryInfo } from "@/lib/collections"
+import { suggestedCountry } from "@/lib/country"
 import { cn } from "@/lib/utils"
 import { useLibrary } from "@/stores/library"
 import { useSettings } from "@/stores/settings"
 
-interface NavItemProps {
-  to: string
-  icon: React.ElementType
-  label: string
-  badge?: React.ReactNode
-  match?: (pathname: string) => boolean
-  onSelect?: () => void
-}
+const NAV = [
+  { to: "/", label: "Home", icon: House },
+  { to: "/browse", label: "Explore channels", icon: Compass },
+  { to: "/favourites", label: "Favourites", icon: Heart },
+]
 
-function NavItem({ to, icon, label, badge, match, onSelect }: NavItemProps) {
-  const location = useLocation()
-  const active = match
-    ? match(location.pathname + location.search)
-    : location.pathname === to || (to !== "/" && location.pathname.startsWith(to))
-
-  return (
-    <SidebarMenuItem>
-      <SidebarMenuButton asChild isActive={active} tooltip={label} onClick={onSelect}>
-        <Link to={to} data-tv-item="">
-          <IconComponent icon={icon} />
-          <span>{label}</span>
-        </Link>
-      </SidebarMenuButton>
-      {badge ? <SidebarMenuBadge>{badge}</SidebarMenuBadge> : null}
-    </SidebarMenuItem>
-  )
-}
-
-function IconComponent({ icon: Icon }: { icon: React.ElementType }) {
-  return <Icon />
-}
-
-export function AppSidebar({ onOpenSettings, onOpenShortcuts }: { onOpenSettings: () => void; onOpenShortcuts: () => void }) {
-  const { index, meta, generatedAt, live, channels } = useCatalog()
-  const { setTheme } = useTheme()
+export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
+  const { pathname, search } = useLocation()
+  const { isMobile, setOpenMobile } = useSidebar()
+  const favourites = useLibrary((s) => s.favorites.length)
   const homeCountry = useSettings((s) => s.homeCountry)
-  const search = useLocationSearch()
-  const favorites = useLibrary((s) => s.favorites)
-  const custom = useLibrary((s) => s.custom)
+  const [detectedCountry] = React.useState(suggestedCountry)
+  const { meta } = useCatalog()
+  const code = homeCountry || detectedCountry
+  const country = code ? countryInfo(code, meta) : null
+  const closeMobile = React.useCallback(() => setOpenMobile(false), [setOpenMobile])
 
-  const topCountries = React.useMemo(() => {
-    const counts = [...index.countryCounts.entries()]
-      .filter(([code]) => code !== "CUSTOM")
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    const home = homeCountry ? [[homeCountry, index.countryCounts.get(homeCountry) ?? 0] as [string, number]] : []
-    const rest = counts.filter(([code]) => code !== homeCountry).slice(0, 9)
-    return [...home, ...rest]
-  }, [homeCountry, index.countryCounts])
+  React.useEffect(() => {
+    closeMobile()
+  }, [pathname, search, closeMobile])
 
-  const eastAfricaCount = React.useMemo(
-    () => channels.filter((c) => EAST_AFRICA.includes(c.country)).length,
-    [channels],
-  )
+  const openSettings = () => {
+    closeMobile()
+    onOpenSettings()
+  }
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader>
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border/60">
+      <SidebarHeader className="gap-5 px-4 pt-6 pb-4 group-data-[collapsible=icon]:px-2">
+        <div className="flex items-center gap-2">
+          <Link
+            to="/"
+            onClick={closeMobile}
+            className="flex min-w-0 flex-1 items-center gap-3 rounded-lg group-data-[collapsible=icon]:justify-center"
+            aria-label="Live TV Hub home"
+            data-tv-item=""
+          >
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+              <TvMinimal className="size-5" aria-hidden />
+            </span>
+            <span className="min-w-0 group-data-[collapsible=icon]:hidden">
+              <span className="block text-sm font-semibold tracking-tight">Live TV Hub</span>
+              <span className="mt-0.5 flex items-center gap-1.5 text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
+                <span className="size-1.5 rounded-full bg-primary" /> On air
+              </span>
+            </span>
+          </Link>
+          {isMobile ? (
+            <Button variant="ghost" size="icon" className="size-7" onClick={closeMobile} aria-label="Close navigation">
+              <X className="size-4" />
+            </Button>
+          ) : (
+            <SidebarTrigger className="size-7 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+          )}
+        </div>
+
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link to="/" data-tv-item="">
-                <span className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Tv className="size-4" />
-                </span>
-                <span className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Live TV Hub</span>
-                  <span className="text-muted-foreground truncate text-xs">
-                    {compactNumber(index.channels.length)} channels · {compactNumber(index.totalSources)} streams
-                  </span>
-                </span>
-              </Link>
+            <SidebarMenuButton
+              tooltip="Search channels"
+              onClick={() => {
+                closeMobile()
+                window.dispatchEvent(new CustomEvent("lth:open-palette"))
+              }}
+              className="h-10 rounded-xl border border-sidebar-border/70 bg-background/50 text-muted-foreground shadow-xs"
+            >
+              <Search className="size-4" />
+              <span className="text-xs">Search channels</span>
+              <span className="ml-auto rounded border border-sidebar-border px-1 text-[10px] group-data-[collapsible=icon]:hidden">⌘ K</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="gap-5 px-2 group-data-[collapsible=icon]:px-0">
         <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="mb-2 text-[10px] font-medium tracking-widest uppercase">Discover</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              <NavItem to="/" icon={Home} label="Home" />
-              <NavItem to="/browse" icon={Compass} label="Browse all" />
-              <NavItem
-                to="/favourites"
-                icon={Heart}
-                label="Favourites"
-                badge={favorites.length ? compactNumber(favorites.length) : undefined}
-              />
-              <NavItem
-                to="/my-streams"
-                icon={Radio}
-                label="My streams"
-                badge={custom.length ? String(custom.length) : undefined}
-              />
-              <NavItem
-                to={`/browse?region=${EAST_AFRICA.length ? "EAST" : ""}`}
-                icon={Tv}
-                label="East Africa"
-                badge={eastAfricaCount ? compactNumber(eastAfricaCount) : undefined}
-                match={(path) => path.includes("region=EAST")}
-              />
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Countries</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {topCountries.map(([code, count]) => {
-                const info = countryInfo(code, meta)
+            <SidebarMenu className="gap-1.5">
+              {NAV.map((item) => {
+                const active = pathname === item.to || (item.to !== "/" && pathname.startsWith(`${item.to}/`))
                 return (
-                  <SidebarMenuItem key={code}>
+                  <SidebarMenuItem key={item.to}>
                     <SidebarMenuButton
                       asChild
-                      tooltip={`${info.flag} ${info.name}`}
-                      isActive={search.includes(`country=${code}`)}
+                      isActive={active}
+                      tooltip={item.label}
+                      className={cn(
+                        "h-11 rounded-xl px-3 text-muted-foreground transition-colors",
+                        "data-[active=true]:bg-primary/10 data-[active=true]:font-semibold data-[active=true]:text-primary",
+                      )}
                     >
-                      <Link to={`/browse?country=${code}`} data-tv-item="">
-                        <span className="grid size-4 place-items-center text-base leading-none">
-                          {info.flag}
-                        </span>
-                        <span className="truncate">{info.name}</span>
+                      <Link to={item.to} onClick={closeMobile} aria-current={active ? "page" : undefined} data-tv-item="">
+                        <item.icon className="size-[18px]" strokeWidth={active ? 2.2 : 1.7} aria-hidden />
+                        <span>{item.label}</span>
+                        {item.to === "/favourites" && favourites > 0 ? (
+                          <span className="ml-auto min-w-5 rounded-md bg-sidebar-accent px-1.5 py-0.5 text-center text-[10px] text-muted-foreground tabular-nums group-data-[collapsible=icon]:hidden">
+                            {favourites}
+                          </span>
+                        ) : null}
                       </Link>
                     </SidebarMenuButton>
-                    <SidebarMenuBadge>{compactNumber(count)}</SidebarMenuBadge>
-                  </SidebarMenuItem>
-                )
-              })}
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="All countries">
-                  <Link to="/browse?group=country" data-tv-item="">
-                    <Compass />
-                    <span>All countries</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Categories</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {FEATURED_CATEGORIES.map((id) => {
-                const Icon = categoryIcon(id)
-                const count = index.categoryCounts.get(id) ?? 0
-                const name = meta.categories.find((c) => c.id === id)?.name ?? id
-                return (
-                  <SidebarMenuItem key={id}>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip={name}
-                      isActive={search.includes(`category=${id}`)}
-                    >
-                      <Link to={`/browse?category=${id}`} data-tv-item="">
-                        <Icon />
-                        <span>{name}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                    <SidebarMenuBadge>{compactNumber(count)}</SidebarMenuBadge>
                   </SidebarMenuItem>
                 )
               })}
@@ -216,82 +134,46 @@ export function AppSidebar({ onOpenSettings, onOpenShortcuts }: { onOpenSettings
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarSeparator className="mx-0" />
-
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Settings" onClick={onOpenSettings}>
-                  <Settings />
-                  <span>Settings</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Keyboard & remote" onClick={onOpenShortcuts}>
-                  <Keyboard />
-                  <span>Keyboard &amp; remote</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {country ? (
+          <div className="mx-2 rounded-xl border border-sidebar-border/70 bg-background/40 p-3 group-data-[collapsible=icon]:hidden">
+            <p className="mb-2 flex items-center gap-1.5 text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
+              <MapPin className="size-3" /> {homeCountry ? "Your country" : "From your time zone"}
+            </p>
+            <Link
+              to={`/browse?country=${code}`}
+              onClick={closeMobile}
+              className="flex items-center gap-2 rounded-md text-sm font-medium transition-colors hover:text-primary"
+            >
+              <span aria-hidden>{country.flag}</span>
+              <span className="min-w-0 flex-1 truncate">{country.name}</span>
+              <ArrowUpRight className="size-3.5 text-muted-foreground" />
+            </Link>
+          </div>
+        ) : null}
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="gap-3 px-4 pt-3 pb-5 group-data-[collapsible=icon]:px-2">
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton tooltip="Theme" className={cn("data-[state=open]:bg-sidebar-accent")}>
-                  <Sun className="dark:hidden" />
-                  <Moon className="hidden dark:block" />
-                  <span>Theme</span>
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="top" align="start" className="min-w-32">
-                <DropdownMenuLabel>Appearance</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup onValueChange={setTheme}>
-                  <DropdownMenuRadioItem value="light">
-                    <Sun /> Light
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="dark">
-                    <Moon /> Dark
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="system">
-                    <Monitor /> System
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="iptv-org on GitHub" className="text-muted-foreground">
-              <a
-                href="https://github.com/iptv-org/iptv"
-                target="_blank"
-                rel="noreferrer noopener"
-                className="text-xs"
-              >
-                <Github />
-                <span className="truncate">
-                  Data: iptv-org{live ? " · live" : generatedAt ? ` · ${formatDate(generatedAt)}` : ""}
-                </span>
-              </a>
+            <SidebarMenuButton tooltip="Settings" onClick={openSettings} className="h-10 rounded-xl text-muted-foreground" data-tv-item="">
+              <Settings2 className="size-4" strokeWidth={1.7} />
+              <span>Settings</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+        <div className="border-t border-sidebar-border/70 px-2 pt-3 group-data-[collapsible=icon]:hidden">
+          <a
+            href="https://github.com/iptv-org/iptv"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="flex items-center justify-between text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <span>Powered by iptv-org</span>
+            <ArrowUpRight className="size-3" />
+          </a>
+        </div>
       </SidebarFooter>
-
       <SidebarRail />
     </Sidebar>
   )
-}
-
-/** Local helper: the current query string, without subscribing to the router. */
-function useLocationSearch(): string {
-  const location = useLocation()
-  return location.search
 }

@@ -1,41 +1,27 @@
-import { Globe2, Heart, Play, ShieldAlert, Timer } from "lucide-react"
+import { Heart, Play } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import { ChannelLogo } from "@/components/channel/channel-logo"
-import { categoryIcon, countryInfo } from "@/lib/collections"
-import { qualityLabel } from "@/lib/format"
 import { useCatalog } from "@/lib/catalog"
+import { countryInfo } from "@/lib/collections"
 import type { Channel } from "@/lib/iptv/types"
 import { cn } from "@/lib/utils"
 import { useLibrary } from "@/stores/library"
 
 export const MAX_QUEUE = 300
 
-export interface ChannelCardProps {
+interface ChannelCardProps {
   channel: Channel
   /** Channel ids that ◀ / ▶ walk through once this card opens the player. */
   queue?: string[]
   className?: string
-  showCountry?: boolean
 }
 
-export function ChannelCard({
-  channel,
-  queue,
-  className,
-  showCountry = true,
-}: ChannelCardProps) {
+export function ChannelCard({ channel, queue, className }: ChannelCardProps) {
   const { meta } = useCatalog()
   const isFav = useLibrary((s) => s.favorites.includes(channel.id))
   const toggleFavorite = useLibrary((s) => s.toggleFavorite)
-
   const country = countryInfo(channel.country, meta)
-  const category = channel.categories[0]
-  const CategoryIcon = category ? categoryIcon(category) : null
-  const quality = qualityLabel(channel.sources.find((s) => s.quality)?.quality)
-  const geoBlocked = channel.sources.some((s) => s.labels?.includes("Geo-blocked"))
-  const not247 = channel.sources.some((s) => s.labels?.includes("Not 24/7"))
-  const headerOnly = channel.sources.every((s) => s.referrer || s.userAgent)
 
   return (
     <div className={cn("group/card relative", className)}>
@@ -58,61 +44,13 @@ export function ChannelCard({
               <Play className="size-5 translate-x-px fill-current" />
             </span>
           </div>
-
-          <div className="absolute top-1.5 left-1.5 flex flex-wrap gap-1">
-            {quality ? (
-              <span className="rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
-                {quality}
-              </span>
-            ) : null}
-            {headerOnly ? (
-              <span className="rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white/80 backdrop-blur-sm">
-                headers
-              </span>
-            ) : null}
-          </div>
-
-          <div className="absolute right-1.5 bottom-1.5 left-1.5 flex items-center justify-between gap-1">
-            <span className="flex gap-1">
-              {geoBlocked ? (
-                <span
-                  title="Possibly geo-blocked"
-                  className="flex items-center gap-0.5 rounded bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-semibold text-black"
-                >
-                  <ShieldAlert className="size-2.5" /> geo
-                </span>
-              ) : null}
-              {not247 ? (
-                <span
-                  title="Not broadcasting 24/7"
-                  className="flex items-center gap-0.5 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white/85 backdrop-blur-sm"
-                >
-                  <Timer className="size-2.5" /> part-time
-                </span>
-              ) : null}
-            </span>
-            {channel.sources.length > 1 ? (
-              <span className="rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white/85 backdrop-blur-sm">
-                {channel.sources.length} sources
-              </span>
-            ) : null}
-          </div>
         </div>
 
         <div className="mt-2 space-y-0.5 px-0.5">
           <p className="truncate text-sm font-medium leading-tight">{channel.name}</p>
           <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
-            {showCountry ? <span aria-hidden>{country.flag}</span> : null}
-            {showCountry ? <span className="truncate">{country.name}</span> : null}
-            {CategoryIcon ? (
-              <>
-                <span aria-hidden className="opacity-40">
-                  ·
-                </span>
-                <CategoryIcon className="size-3 shrink-0 opacity-70" aria-hidden />
-              </>
-            ) : null}
-            {!showCountry && !CategoryIcon ? <Globe2 className="size-3" aria-hidden /> : null}
+            <span aria-hidden>{country.flag}</span>
+            <span className="truncate">{country.name}</span>
           </p>
         </div>
       </Link>

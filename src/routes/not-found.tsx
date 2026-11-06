@@ -19,25 +19,15 @@ export function NotFoundPage() {
           <EmptyMedia variant="icon">
             <Compass />
           </EmptyMedia>
-          <EmptyTitle>This page is off air</EmptyTitle>
-          <EmptyDescription>
-            The address you followed does not exist in Live TV Hub. The catalog is still very much
-            on air, though.
-          </EmptyDescription>
+          <EmptyTitle>Page not found</EmptyTitle>
+          <EmptyDescription>That address does not exist.</EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <div className="flex gap-2">
-            <Button asChild>
-              <Link to="/">
-                <Home /> Home
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="/browse">
-                <Compass /> Browse channels
-              </Link>
-            </Button>
-          </div>
+          <Button asChild>
+            <Link to="/">
+              <Home /> Home
+            </Link>
+          </Button>
         </EmptyContent>
       </Empty>
     </div>

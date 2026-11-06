@@ -8,39 +8,14 @@ export function compactNumber(value: number): string {
   }).format(value)
 }
 
-export function formatDate(iso: string, withTime = false): string {
+export function formatDate(iso: string): string {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return "—"
   return new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",
-    ...(withTime ? { hour: "2-digit", minute: "2-digit" } : {}),
   }).format(date)
-}
-
-export function timeAgo(input: string | number): string {
-  const then = typeof input === "number" ? input : new Date(input).getTime()
-  const seconds = Math.round((Date.now() - then) / 1000)
-  if (seconds < 45) return "just now"
-  const units: [Intl.RelativeTimeFormatUnit, number][] = [
-    ["minute", 60],
-    ["hour", 3600],
-    ["day", 86_400],
-    ["week", 604_800],
-    ["month", 2_592_000],
-    ["year", 31_536_000],
-  ]
-  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" })
-  let divisor = 1
-  let unit: Intl.RelativeTimeFormatUnit = "minute"
-  for (const [u, d] of units) {
-    if (Math.abs(seconds) >= d) {
-      unit = u
-      divisor = d
-    }
-  }
-  return rtf.format(-Math.round(seconds / divisor), unit)
 }
 
 /** Two-letter monogram used when a channel has no (loadable) logo. */
@@ -52,19 +27,11 @@ export function monogram(name: string): string {
   return (words[0][0] + words[1][0]).toUpperCase()
 }
 
-export function pluralize(count: number, singular: string, plural = `${singular}s`): string {
-  return `${count.toLocaleString()} ${count === 1 ? singular : plural}`
-}
-
 /** Deterministic hue from a string, used for logo placeholder tiles. */
 export function hueFromString(value: string): number {
   let hash = 0
   for (let i = 0; i < value.length; i++) hash = (hash * 31 + value.charCodeAt(i)) >>> 0
   return hash % 360
-}
-
-export function isSecurePage(): boolean {
-  return typeof window !== "undefined" && window.isSecureContext
 }
 
 /** Normalise a quality string ("1080p", "HD", null) to something badge-worthy. */
@@ -89,17 +56,4 @@ export function hostnameOf(url: string): string {
   } catch {
     return url
   }
-}
-
-export function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value))
-}
-
-export function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "")
 }

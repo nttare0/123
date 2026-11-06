@@ -1,26 +1,27 @@
 import type { Channel, StreamSource } from "@/lib/iptv/types"
-import { resolveProtocol, type SettingsState } from "@/stores/settings"
+import { httpsOnly } from "@/stores/settings"
 
 /**
- * Which of a channel's sources we are actually willing to try, and in which order.
+ * Which of a channel's sources we are willing to try, and in what order.
  *
- * iptv-org channels frequently carry several mirrors of the same broadcast, some
- * geo-blocked, some plain-http, some requiring headers a browser cannot set.
- * We filter by the viewer's preferences but always relax the rules before giving
- * up entirely — an "imperfect" stream still beats a black screen.
+ * iptv-org channels often list several mirrors, some geo-blocked, some plain-http,
+ * some requiring headers a browser cannot set. We filter, but always relax the
+ * rules before giving up entirely — an imperfect stream beats a black screen.
  */
-export function selectSources(channel: Channel, settings: SettingsState): StreamSource[] {
-  const httpsOnly = resolveProtocol(settings.protocol) === "https"
+export function selectSources(channel: Channel, hideHeaderOnly: boolean): StreamSource[] {
+  const secureOnly = httpsOnly()
 
+  // Only exclude what genuinely cannot play in a browser. Geo-blocked and
+  // part-time sources stay in — those labels describe the broadcaster's
+  // audience, not a technical impossibility — and are badged in the UI.
+  //   level 0: strict · 1: allow http · 2: allow header-restricted
   const passes = (source: StreamSource, level: number) => {
-    if (level < 4 && settings.hideHeaderOnly && (source.referrer || source.userAgent)) return false
-    if (level < 3 && httpsOnly && !source.url.startsWith("https://")) return false
-    if (level < 2 && settings.hideGeoBlocked && source.labels?.includes("Geo-blocked")) return false
-    if (level < 1 && settings.hideNot247 && source.labels?.includes("Not 24/7")) return false
+    if (level < 1 && secureOnly && !source.url.startsWith("https://")) return false
+    if (level < 2 && hideHeaderOnly && (source.referrer || source.userAgent)) return false
     return true
   }
 
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 2; level++) {
     const kept = channel.sources.filter((source) => passes(source, level))
     if (kept.length) return kept
   }
@@ -30,14 +31,10 @@ export function selectSources(channel: Channel, settings: SettingsState): Stream
 /** Human-readable reason a source might not play in a browser. */
 export function sourceWarnings(source: StreamSource): string[] {
   const warnings: string[] = []
-  if (source.referrer) warnings.push("Needs a Referer header")
-  if (source.userAgent) warnings.push("Needs a custom User-Agent")
-  if (!source.url.startsWith("https://")) warnings.push("Insecure (http) stream")
-  if (source.labels?.includes("Geo-blocked")) warnings.push("Possibly geo-blocked")
-  if (source.labels?.includes("Not 24/7")) warnings.push("Not broadcasting 24/7")
+  if (source.referrer) warnings.push("needs a Referer header")
+  if (source.userAgent) warnings.push("needs a custom User-Agent")
+  if (!source.url.startsWith("https://")) warnings.push("insecure (http)")
+  if (source.labels?.includes("Geo-blocked")) warnings.push("possibly geo-blocked")
+  if (source.labels?.includes("Not 24/7")) warnings.push("not broadcasting 24/7")
   return warnings
-}
-
-export function sourceIsViable(source: StreamSource | undefined | null): boolean {
-  return Boolean(source && !source.referrer && !source.userAgent)
 }

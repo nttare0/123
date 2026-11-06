@@ -2,7 +2,6 @@ import * as React from "react"
 import { SearchX } from "lucide-react"
 
 import { ChannelCard } from "@/components/channel/channel-card"
-import { ChannelListItem } from "@/components/channel/channel-list-item"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -15,11 +14,9 @@ import {
 import { usePaged } from "@/hooks/use-paged"
 import type { Channel } from "@/lib/iptv/types"
 import { cn } from "@/lib/utils"
-import type { ChannelView } from "@/stores/settings"
 
 interface ChannelGridProps {
   channels: Channel[]
-  view?: ChannelView
   pageSize?: number
   className?: string
   emptyTitle?: string
@@ -29,11 +26,10 @@ interface ChannelGridProps {
 
 export function ChannelGrid({
   channels,
-  view = "grid",
   pageSize = 60,
   className,
-  emptyTitle = "No channels match those filters",
-  emptyDescription = "Try a different search term, or loosen the filters — many free-to-air streams come and go.",
+  emptyTitle = "No channels match",
+  emptyDescription = "Try a different search term or country.",
   emptyAction,
 }: ChannelGridProps) {
   const { visible, hasMore, sentinelRef, shown, total, loadMore } = usePaged(channels, pageSize)
@@ -56,33 +52,25 @@ export function ChannelGrid({
 
   return (
     <div className={className}>
-      {view === "grid" ? (
-        <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-          {visible.map((channel) => (
-            <ChannelCard key={channel.id} channel={channel} queue={queue} />
-          ))}
-        </div>
-      ) : (
-        <div className="divide-y divide-border overflow-hidden rounded-xl border bg-card/40">
-          {visible.map((channel) => (
-            <ChannelListItem key={channel.id} channel={channel} queue={queue} />
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+        {visible.map((channel) => (
+          <ChannelCard key={channel.id} channel={channel} queue={queue} />
+        ))}
+      </div>
 
       <div ref={sentinelRef} aria-hidden className="h-px w-full" />
 
-      <div className="mt-6 flex items-center justify-between gap-4 text-xs text-muted-foreground">
-        <span>
-          Showing <span className="font-medium text-foreground">{shown.toLocaleString()}</span> of{" "}
-          <span className="font-medium text-foreground">{total.toLocaleString()}</span> channels
-        </span>
-        {hasMore ? (
+      {hasMore ? (
+        <div className="mt-6 flex items-center justify-between gap-4 text-xs text-muted-foreground">
+          <span>
+            <span className="font-medium text-foreground">{shown.toLocaleString()}</span> of{" "}
+            <span className="font-medium text-foreground">{total.toLocaleString()}</span>
+          </span>
           <Button variant="outline" size="sm" onClick={loadMore} data-tv-item="">
             Load more
           </Button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </div>
   )
 }
