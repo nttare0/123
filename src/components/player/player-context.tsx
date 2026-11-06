@@ -226,7 +226,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     try {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: channel.name,
-        artist: "Live TV Hub",
+        artist: "Zepvi",
         album: "Live TV",
         artwork: channel.logo ? [{ src: channel.logo, sizes: "512x512", type: "image/png" }] : [],
       })

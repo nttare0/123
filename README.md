@@ -1,4 +1,4 @@
-# DropTV
+# Zepvi
 
 A minimal live-TV browser built with React, [shadcn/ui](https://ui.shadcn.com), Tailwind CSS and [hls.js](https://github.com/video-dev/hls.js). Channel data comes from the community-maintained [iptv-org](https://github.com/iptv-org/iptv) catalog.
 
@@ -79,15 +79,15 @@ Homepage and Browse have canonical URLs and metadata, including pre-JavaScript B
 
 ## Privacy and legal notices
 
-Footer links expose Terms, Privacy, and Cookies/Local Storage notices without requiring the catalog to load. They describe local preferences, the sidebar cookie, Vercel country inference, and direct connections to stream/artwork providers. No analytics or ad trackers were added. The notices are a starting point for the operator to review, not a legal compliance certification; revisit them and consent handling before adding new trackers or changing data practices.
+Footer links expose Terms, Privacy, and Cookies/Local Storage notices without requiring the catalog to load. They describe local preferences, the sidebar cookie, Vercel country inference, and direct connections to stream/artwork providers. Vercel Web Analytics is included; no ad trackers were added. The notices are a starting point for the operator to review, not a legal compliance certification; revisit them and consent handling before adding new trackers or changing data practices.
 
 Run `npm test` for country-header validation and cache-safety checks.
 
 ## Spotlight, sharing and 404s
 
-Home includes a single-title cinematic hero above the channel grid with upcoming TV from TVmaze's free, keyless `/schedule/web` API (next day's web schedule, not a cinema release feed). The browser fetches directly using TVmaze's CORS support; no Spotlight server, API key or secret is required. Results are normalized/deduplicated and cached in memory for 30 minutes, with shared in-flight requests and retry on failure. Up to eight titles are fetched; only one image/title is displayed at a time with manual previous/next controls. There is no autoplay. Original-size artwork is used when available, in a cinematic, cover-cropped banner with dark readability gradients, a large title, short synopsis and an external Details link. Controls remain below the artwork. The Live news shortcut opens the existing news-channel filter, not a news-headline feed. Spotlight is discovery, not a claim that these titles play here. The previous optional TMDB movie integration was removed to avoid embedding credentials in frontend code.
+Home features one recent movie at a time using the public Cinemeta top-movie metadata catalog, fetched directly in the browser without an API key or server. It prefers landscape background art, falls back to posters, and shows all eligible titles returned by the catalog from last year through next year, newest year first. The catalog is a fresh popular-title feed, **not a complete or exact latest-release calendar**. A year is shown rather than inventing a release date. Titles link to IMDb details, not playback.
 
-TVmaze data is attributed under CC BY-SA. API requests and images connect directly to the provider, as disclosed in the privacy notices. Spotlight works with ordinary Vite or static hosting; the independent country-detection feature still uses Vercel. Upstream availability from this sandbox has not been tested because its outbound host allowlist excludes TVmaze. Tests use fixtures and mocked fetch responses, not live data.
+Results are validated, deduplicated, and cached in memory for 30 minutes, with shared requests and retry after errors. Provider failure retains the last successful catalog or uses bundled, clearly labeled curated title artwork for Heart of the Beast, Resident Evil, Godzilla Minus Zero and Wildwood. These are original typographic graphics, not official posters or verified latest-release metadata. Requests omit credentials but expose the visitor's network information to Cinemeta and image providers. TMDB is not used because its API requires a credential; no borrowed or embedded key is supplied. Provider access/CORS and imagery availability still need verification in a real browser; this sandbox's host allowlist prevents a live Cinemeta request. Tests use fixtures and mocked responses.
 
 Social crawlers receive Open Graph and Twitter large-image tags directly in HTML, with an absolute 1200×630 PNG (`/social-card.png`) and brief text. Browse gets its own static title. Watch URLs currently share the site-wide card; per-channel crawler metadata would require prerendering or server rendering. Some social networks cache previews and may require their sharing debugger to refresh after deployment.
 
@@ -100,3 +100,13 @@ Navigation is hidden initially and automatically closes on route changes or sele
 Playback tests cover secure-source filtering and header restrictions. HTTPS pages no longer fall back to insecure HTTP streams that browsers would block. Unit tests and build checks do not guarantee broadcaster availability or substitute for real-browser HLS, native Safari, fullscreen, mobile and TV-remote testing. Search Console files are prepared, but production deployment, ownership verification, URL Inspection and sitemap submission still require the site owner.
 
 The production HTML now includes the site owner’s Google Search Console verification token directly. The optional build-time environment token is only injected when no static verification tag is present, preventing duplicates. Deploy before attempting ownership verification.
+
+## Brand and deployment address
+
+The app is now branded **Zepvi**. Its existing deployment URL remains `https://droptv.vercel.app/`; changing a display name does not reserve or rename a Vercel domain. Keep this address in canonical links, sitemap, robots, structured data and social-image URLs until a replacement domain has been configured and verified. Then update all those URLs together and review Search Console ownership/redirects. Existing `live-tv-hub:*` storage keys intentionally remain unchanged so favourites and settings survive the rebrand. Name selection is not trademark clearance or a domain-availability guarantee.
+
+## Vercel Web Analytics
+
+`@vercel/analytics/react` is mounted once at the application root (this is Vite, not Next.js). Enable Web Analytics for the project in the Vercel dashboard and redeploy; the production deployment provides the `/_vercel/insights` script/endpoint. Local development does not prove production ingestion. The integration strips query strings and fragments from analytics URLs and sends no custom events. Privacy and cookies notices disclose the cookieless analytics integration. Review regional consent requirements before launch.
+
+Poster rotation advances every five seconds, pauses while hovered/focused or the tab is hidden, and has an explicit pause/resume button. The full eligible response is used without an eight-item cap; this does not mean the provider supplies every movie or infinite pagination. A 30-minute refresh picks up feed changes. Only the displayed artwork is mounted, avoiding downloading every full-resolution image at once.

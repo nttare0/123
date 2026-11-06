@@ -1,12 +1,23 @@
 import assert from "node:assert/strict"
-import { loadSpotlight, normalizeSchedule } from "../src/lib/spotlight.ts"
-const show = { id: 1, name: "Upcoming show", url: "https://www.tvmaze.com/shows/1/test", image: null }
-assert.deepEqual(normalizeSchedule([
-  { id: 1, airstamp: "2026-11-07T12:00:00Z", show },
-  { id: 2, airstamp: "2026-11-07T13:00:00Z", _embedded: { show } },
-  { id: 3, airstamp: "2026-11-01T12:00:00Z", show: { ...show, id: 2 } },
-  { id: 4, airstamp: "2026-11-07T14:00:00Z", show: { ...show, id: 3, url: "javascript:bad" } },
-], new Date("2026-11-06T12:00:00Z")).map((i) => i.id), ["tv-1"])
+import { FALLBACK_MOVIES, loadSpotlight, normalizeMovies } from "../src/lib/spotlight.ts"
+const year = new Date().getUTCFullYear()
+const movie = { id: "tt1234567", name: "Recent movie", releaseInfo: String(year), poster: "https://example.com/poster.jpg", background: "https://example.com/backdrop.jpg" }
+const normalized = normalizeMovies({ metas: [movie, movie,
+  { ...movie, id: "tt1", releaseInfo: String(year - 5) },
+  { ...movie, id: "tt2", poster: "javascript:bad", background: null },
+  { ...movie, id: "bad" },
+  { ...movie, id: "tt3", releaseInfo: String(year + 1) },
+] })
+assert.deepEqual(normalized.map((m) => m.id), ["tt3", "tt1234567"])
+assert.equal(normalized[1].image, movie.background)
+assert.equal(normalized[1].url, "https://www.imdb.com/title/tt1234567/")
+assert.deepEqual(normalizeMovies(null), [])
+assert.equal(normalizeMovies({ metas: Array.from({ length: 25 }, (_, i) => ({ ...movie, id: `tt${1000 + i}` })) }).length, 25)
+assert.deepEqual(FALLBACK_MOVIES.map((m) => m.title), ["Heart of the Beast", "Resident Evil", "Godzilla Minus Zero", "Wildwood"])
+for (const item of FALLBACK_MOVIES) {
+  assert.ok(item.curated)
+  assert.ok(item.image.startsWith("/posters/"))
+}
 const original = globalThis.fetch
 const originalNow = Date.now
 let calls = 0
@@ -15,9 +26,9 @@ try {
   await assert.rejects(loadSpotlight())
   globalThis.fetch = async (url, options) => {
     calls++
-    assert.match(String(url), /^https:\/\/api.tvmaze.com\/schedule\/web\?date=/)
+    assert.equal(String(url), "https://cinemeta-catalogs.strem.io/top/catalog/movie/top.json")
     assert.equal(options?.credentials, "omit")
-    return new Response(JSON.stringify([{ id: 1, airstamp: new Date(originalNow() + 86400000).toISOString(), show }]))
+    return new Response(JSON.stringify({ metas: [movie] }))
   }
   const [first, second] = await Promise.all([loadSpotlight(), loadSpotlight()])
   assert.equal(first.length, 1)

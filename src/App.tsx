@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/react"
 import { ThemeProvider } from "next-themes"
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom"
 
@@ -54,6 +55,13 @@ export default function App() {
           </BrowserRouter>
         </CatalogProvider>
         <Toaster position="bottom-center" richColors />
+        <Analytics beforeSend={(event) => {
+          // Search terms and filter values are unnecessary for page-view counts.
+          const url = new URL(event.url)
+          url.search = ""
+          url.hash = ""
+          return { ...event, url: url.toString() }
+        }} />
       </TooltipProvider>
     </ThemeProvider>
   )
