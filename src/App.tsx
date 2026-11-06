@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/react"
 import { ThemeProvider } from "next-themes"
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom"
 
@@ -54,6 +55,7 @@ export default function App() {
           </BrowserRouter>
         </CatalogProvider>
         <Toaster position="bottom-center" richColors />
+        <Analytics />
       </TooltipProvider>
     </ThemeProvider>
   )
