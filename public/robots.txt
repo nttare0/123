@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /favourites
+
+Sitemap: https://droptv.vercel.app/sitemap.xml

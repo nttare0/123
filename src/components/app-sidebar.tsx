@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/sidebar"
 import { useCatalog } from "@/lib/catalog"
 import { countryInfo } from "@/lib/collections"
-import { suggestedCountry } from "@/lib/country"
+import { useDetectedCountry } from "@/lib/country"
 import { cn } from "@/lib/utils"
 import { useLibrary } from "@/stores/library"
 import { useSettings } from "@/stores/settings"
@@ -36,7 +36,7 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
   const { isMobile, setOpenMobile } = useSidebar()
   const favourites = useLibrary((s) => s.favorites.length)
   const homeCountry = useSettings((s) => s.homeCountry)
-  const [detectedCountry] = React.useState(suggestedCountry)
+  const detectedCountry = useDetectedCountry(!homeCountry)
   const { meta } = useCatalog()
   const code = homeCountry || detectedCountry
   const country = code ? countryInfo(code, meta) : null
@@ -59,14 +59,14 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
             to="/"
             onClick={closeMobile}
             className="flex min-w-0 flex-1 items-center gap-3 rounded-lg group-data-[collapsible=icon]:justify-center"
-            aria-label="Live TV Hub home"
+            aria-label="DropTV home"
             data-tv-item=""
           >
             <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
               <TvMinimal className="size-5" aria-hidden />
             </span>
             <span className="min-w-0 group-data-[collapsible=icon]:hidden">
-              <span className="block text-sm font-semibold tracking-tight">Live TV Hub</span>
+              <span className="block text-sm font-semibold tracking-tight">DropTV</span>
               <span className="mt-0.5 flex items-center gap-1.5 text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
                 <span className="size-1.5 rounded-full bg-primary" /> On air
               </span>
@@ -137,7 +137,7 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
         {country ? (
           <div className="mx-2 rounded-xl border border-sidebar-border/70 bg-background/40 p-3 group-data-[collapsible=icon]:hidden">
             <p className="mb-2 flex items-center gap-1.5 text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
-              <MapPin className="size-3" /> {homeCountry ? "Your country" : "From your time zone"}
+              <MapPin className="size-3" /> {homeCountry ? "Your country" : "Suggested country"}
             </p>
             <Link
               to={`/browse?country=${code}`}
@@ -162,6 +162,11 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
           </SidebarMenuItem>
         </SidebarMenu>
         <div className="border-t border-sidebar-border/70 px-2 pt-3 group-data-[collapsible=icon]:hidden">
+          <nav aria-label="Legal" className="mb-3 flex flex-wrap gap-x-3 gap-y-2 text-[11px] text-muted-foreground">
+            <a href="/terms.html" className="hover:text-foreground">Terms</a>
+            <a href="/privacy.html" className="hover:text-foreground">Privacy</a>
+            <a href="/cookies.html" className="hover:text-foreground">Cookies</a>
+          </nav>
           <a
             href="https://github.com/iptv-org/iptv"
             target="_blank"

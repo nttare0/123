@@ -1,6 +1,7 @@
 import { ThemeProvider } from "next-themes"
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 
+import { Seo } from "@/components/seo"
 import { AppLayout } from "@/components/app-layout"
 import { CatalogSplash } from "@/components/catalog-splash"
 import { PlayerProvider } from "@/components/player/player-context"
@@ -21,6 +22,8 @@ function Shell() {
     return <CatalogSplash progress={0} error={error} onRetry={() => window.location.reload()} />
 
   return (
+    <>
+    <Seo />
     <Routes>
       <Route element={<AppLayout />}>
         <Route index element={<HomePage />} />
@@ -30,6 +33,7 @@ function Shell() {
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
+    </>
   )
 }
 

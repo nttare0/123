@@ -6,16 +6,16 @@
   "description": "Free-to-air live TV from around the world, built with shadcn/ui and the iptv-org catalog.",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && tsx scripts/build-seo.ts",
     "preview": "vite preview",
     "typecheck": "tsc -b",
-    "data:sync": "tsx scripts/build-data.ts"
+    "data:sync": "tsx scripts/build-data.ts",
+    "test": "tsx scripts/test-country.ts"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "countries-and-timezones": "^3.11.0",
     "hls.js": "^1.7.4",
     "lucide-react": "^0.577.0",
     "next-themes": "^0.4.6",

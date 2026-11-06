@@ -61,11 +61,11 @@ export function SettingsDialog({
         </DialogHeader>
 
         <div className="px-5 py-1">
-          <Row title="Home country" description="Automatic uses your browser time zone, not GPS. Override it here if needed.">
+          <Row title="Home country" description="Automatic estimates your country from your network, not GPS. VPNs may affect this; override it here.">
             <CountryPicker
               className="w-44"
               allowAll
-              allLabel="Automatic (time zone)"
+              allLabel="Automatic (network)"
               value={settings.homeCountry}
               onChange={(homeCountry) => set({ homeCountry })}
             />

@@ -45,14 +45,6 @@ export function WatchPage() {
     player.play(channelId, { queue })
   }, [channelId, location.state, player.channel?.id])
 
-  React.useEffect(() => {
-    if (!channel) return
-    document.title = `${channel.name} · Live TV Hub`
-    return () => {
-      document.title = "Live TV Hub"
-    }
-  }, [channel])
-
   const onChannelPage = player.mode === "theater"
   const focusOnItem = () =>
     (document.activeElement as HTMLElement | null)?.matches?.("[data-tv-item]") === true
