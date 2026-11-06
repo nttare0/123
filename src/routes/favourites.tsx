@@ -34,7 +34,7 @@ export function FavouritesPage() {
   )
 
   return (
-    <div className="mx-auto max-w-[110rem] space-y-9 px-4 py-6 sm:px-6">
+    <div className="w-full min-w-0 space-y-9 px-4 py-6 sm:px-6 lg:px-10">
       <div className="space-y-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h1 className="text-lg font-semibold tracking-tight sm:text-xl">

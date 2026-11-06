@@ -73,7 +73,7 @@ export function CommandMenu({ open, onOpenChange, onOpenSettings }: CommandMenuP
     <CommandDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Search Live TV Hub"
+      title="Search Zepvi"
       description="Search channels or run a command."
       className="top-[20%] translate-y-0 sm:max-w-xl"
     >

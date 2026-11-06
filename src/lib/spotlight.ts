@@ -1,53 +1,67 @@
 export interface SpotlightItem {
   id: string
   title: string
-  date: string
-  image: string | null
+  /** Release year only: the catalog may not provide an exact release date. */
+  year?: number
+  curated?: boolean
+  image: string
   url: string
   description?: string
-  kind: "TV" | "Movie"
+  kind: "Movie"
 }
 
-export interface Episode {
-  id: number
-  airstamp?: string
-  airdate?: string
-  show?: { id: number; name: string; url: string; summary?: string | null; image?: { medium?: string; original?: string } | null }
-  _embedded?: { show?: Episode["show"] }
+function imageUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null
+  try { return new URL(value).protocol === "https:" ? value : null } catch { return null }
 }
 
-export function normalizeSchedule(data: Episode[], now = new Date()): SpotlightItem[] {
-  const seen = new Set<number>()
-  return data.filter((e) => e.airstamp && new Date(e.airstamp) >= now)
-    .sort((a, b) => (a.airstamp ?? "").localeCompare(b.airstamp ?? ""))
-    .flatMap((e) => {
-      const show = e.show ?? e._embedded?.show
-      if (!show || seen.has(show.id) || !show.url.startsWith("https://www.tvmaze.com/")) return []
-      seen.add(show.id)
-      return [{ id: `tv-${show.id}`, title: show.name, date: e.airstamp!, description: show.summary?.replace(/<[^>]*>/g, " ").replace(/&amp;/g, "&").replace(/&#39;/g, "’").replace(/&quot;/g, '"').replace(/ /g, " ").replace(/\s+/g, " ").trim(), image: show.image?.original ?? show.image?.medium ?? null, url: show.url, kind: "TV" as const }]
-    }).slice(0, 8)
+export function normalizeMovies(data: unknown, now = new Date()): SpotlightItem[] {
+  const metas = (data as { metas?: unknown } | null)?.metas
+  if (!Array.isArray(metas)) return []
+  const seen = new Set<string>()
+  return metas.flatMap((movie): SpotlightItem[] => {
+    if (!movie || typeof movie !== "object") return []
+    const id = movie.imdb_id ?? movie.id
+    const year = Number(String(movie.releaseInfo ?? movie.year ?? "").match(/^\d{4}/)?.[0])
+    const image = imageUrl(movie.background) ?? imageUrl(movie.poster)
+    if (typeof id !== "string" || !/^tt\d+$/.test(id) || seen.has(id) ||
+        typeof movie.name !== "string" || !movie.name.trim() || !image ||
+        !year || year < now.getUTCFullYear() - 1 || year > now.getUTCFullYear() + 1) return []
+    seen.add(id)
+    return [{ id, title: movie.name.trim(), year, image, url: `https://www.imdb.com/title/${id}/`,
+      description: typeof movie.description === "string" ? movie.description.replace(/<[^>]*>/g, " ").trim() : undefined,
+      kind: "Movie" }]
+  }).sort((a, b) => (b.year ?? 0) - (a.year ?? 0))
 }
 
 let cached: { expires: number; items: SpotlightItem[] } | undefined
 let pending: Promise<SpotlightItem[]> | undefined
 
-/** TVmaze supports browser CORS; no server, API key or persistent storage needed. */
+/** Public Cinemeta metadata only: no key, server, embeds or playback sources. */
 export function loadSpotlight(): Promise<SpotlightItem[]> {
   if (cached && cached.expires > Date.now()) return Promise.resolve(cached.items)
   if (pending) return pending
-  const now = new Date()
-  const date = new Date(now.getTime() + 86400000).toISOString().slice(0, 10)
-  pending = fetch(`https://api.tvmaze.com/schedule/web?date=${date}`, {
+  pending = fetch("https://cinemeta-catalogs.strem.io/top/catalog/movie/top.json", {
     signal: AbortSignal.timeout(12000),
     credentials: "omit",
   }).then(async (response) => {
-    if (!response.ok) throw new Error("Spotlight unavailable")
-    const data: unknown = await response.json()
-    if (!Array.isArray(data)) throw new Error("Invalid schedule")
-    const items = normalizeSchedule(data, now)
-    if (!items.length) throw new Error("No upcoming shows")
+    if (!response.ok) throw new Error("Movie catalog unavailable")
+    const items = normalizeMovies(await response.json())
+    if (!items.length) throw new Error("No recent movies available")
     cached = { expires: Date.now() + 30 * 60 * 1000, items }
     return items
   }).finally(() => { pending = undefined })
   return pending
 }
+
+/** Bundled original title artwork remains available when the network is offline. */
+export const FALLBACK_MOVIES: SpotlightItem[] = [
+  ["heart-of-the-beast", "Heart of the Beast"],
+  ["resident-evil", "Resident Evil"],
+  ["godzilla-minus-zero", "Godzilla Minus Zero"],
+  ["wildwood", "Wildwood"],
+].map(([slug, title]) => ({
+  id: `curated-${slug}`, title, image: `/posters/${slug}.svg`, kind: "Movie", curated: true,
+  url: `https://www.imdb.com/find/?q=${encodeURIComponent(title)}`,
+  description: "A curated movie pick. Check title details for release and availability information.",
+}))

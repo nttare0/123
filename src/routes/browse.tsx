@@ -49,7 +49,7 @@ export function BrowsePage() {
   const dirty = Boolean(query || country || category)
 
   return (
-    <div className="mx-auto max-w-[110rem] space-y-6 px-4 py-6 sm:px-6">
+    <div className="w-full min-w-0 space-y-6 px-4 py-6 sm:px-6 lg:px-10">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-lg font-semibold tracking-tight sm:text-xl">Browse</h1>
         <p className="text-xs text-muted-foreground tabular-nums">

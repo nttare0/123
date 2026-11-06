@@ -100,7 +100,7 @@ export function WatchPage() {
     <div className="pb-16">
       {/* theater */}
       <div className="border-b bg-zinc-950 pb-4 dark:bg-black">
-        <div className="mx-auto w-full max-w-6xl px-0 sm:px-4 sm:pt-4">
+        <div className="w-full px-0 sm:px-4 sm:pt-4">
           <div
             ref={anchorRef}
             className="relative aspect-video w-full overflow-hidden bg-black sm:rounded-xl sm:ring-1 sm:ring-white/10"
@@ -115,7 +115,7 @@ export function WatchPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl space-y-8 px-4 py-6 sm:px-6">
+      <div className="w-full space-y-8 px-4 py-6 sm:px-6">
         <div className="flex flex-wrap items-center gap-4">
           <ChannelLogo channel={channel} className="size-12 shrink-0 rounded-lg ring-1 ring-border" />
           <div className="min-w-0 flex-1">

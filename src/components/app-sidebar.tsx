@@ -66,14 +66,14 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
             to="/"
             onClick={closeMobile}
             className="flex min-w-0 flex-1 items-center gap-3 rounded-lg group-data-[collapsible=icon]:justify-center"
-            aria-label="DropTV home"
+            aria-label="Zepvi home"
             data-tv-item=""
           >
             <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
               <TvMinimal className="size-5" aria-hidden />
             </span>
             <span className="min-w-0 group-data-[collapsible=icon]:hidden">
-              <span className="block text-sm font-semibold tracking-tight">DropTV</span>
+              <span className="block text-sm font-semibold tracking-tight">Zepvi</span>
               <span className="mt-0.5 flex items-center gap-1.5 text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
                 <span className="size-1.5 rounded-full bg-primary" /> On air
               </span>

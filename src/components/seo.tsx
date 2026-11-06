@@ -11,11 +11,11 @@ export function Seo() {
     let id = ""
     try { id = decodeURIComponent(pathname.slice(7)) } catch { /* unknown URL */ }
     const channel = watch ? getChannel(id) : undefined
-    const title = pathname === "/" ? "DropTV — Free live TV from around the world"
-      : pathname === "/browse" ? "Browse live TV channels | DropTV"
-      : channel ? `${channel.name} — Watch live | DropTV`
-      : pathname === "/favourites" ? "Your favourites | DropTV" : "Page not found | DropTV"
-    const description = channel ? `Watch ${channel.name} live on DropTV. Stream availability depends on the broadcaster.`
+    const title = pathname === "/" ? "Zepvi — Free live TV from around the world"
+      : pathname === "/browse" ? "Browse live TV channels | Zepvi"
+      : channel ? `${channel.name} — Watch live | Zepvi`
+      : pathname === "/favourites" ? "Your favourites | Zepvi" : "Page not found | Zepvi"
+    const description = channel ? `Watch ${channel.name} live on Zepvi. Stream availability depends on the broadcaster.`
       : "Live TV. Less noise. Your channels, worldwide."
     document.title = title
     const set = (selector: string, attribute: string, value: string) => document.querySelector(selector)?.setAttribute(attribute, value)

@@ -34,10 +34,11 @@ export function HomePage() {
   }, [category, countryCode, hideHeaderOnly, index.channels])
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-7 px-4 py-7 sm:px-6 sm:py-10">
-      <h1 className="sr-only">DropTV — live TV and upcoming shows</h1>
+    <main className="w-full min-w-0 pb-8">
+      <h1 className="sr-only">Zepvi — live TV and upcoming shows</h1>
       <Spotlight />
 
+      <div className="space-y-7 px-4 pt-6 sm:px-6 lg:px-10">
       <div className="flex flex-wrap gap-1 border-b pb-4" role="group" aria-label="Channel category">
         {[{ id: "", name: "For you" }, ...HOME_CATEGORIES.map((id) => ({ id, name: categoryName(id, meta) }))].map((item) => (
           <button
@@ -64,6 +65,7 @@ export function HomePage() {
         </div>
         <ChannelGrid channels={channels} />
       </section>
+      </div>
     </main>
   )
 }
