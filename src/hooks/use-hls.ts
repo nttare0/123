@@ -245,6 +245,14 @@ export function useHls({ src, videoRef, autoPlay = true, onFatal }: UseHlsOption
     setNonce((n) => n + 1)
   }, [])
 
+  /** Surface a failure decided outside hls.js (e.g. a stall watchdog). Unlike the internal fail path this never re-notifies onFatal. */
+  const reportFatal = React.useCallback((next: PlayerError) => {
+    if (fatalRef.current) return
+    fatalRef.current = true
+    setStatus("error")
+    setError(next)
+  }, [])
+
   return {
     status,
     error,
@@ -255,5 +263,6 @@ export function useHls({ src, videoRef, autoPlay = true, onFatal }: UseHlsOption
     mutedByPolicy,
     blockedByPolicy,
     retry,
+    reportFatal,
   }
 }
