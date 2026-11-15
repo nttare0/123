@@ -232,3 +232,31 @@
   outline: 3px solid var(--ring);
   outline-offset: 3px;
 }
+
+/*
+ * Reduced motion (modern-web-guidance "motion"): persistent animation is
+ * opt-in only — the static end state stays visible and colour transitions
+ * remain. Handled per-animation, not via a global animation-duration hack.
+ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-spin,
+  .animate-pulse,
+  .animate-live-pulse {
+    animation: none;
+  }
+}
+
+/*
+ * Defer layout/paint for repeated, below-the-fold content blocks
+ * (modern-web-guidance "defer-rendering-heavy-content"). The `auto` keyword
+ * remembers the rendered size to keep scrolling free of layout shift; the
+ * 160px estimate is the placeholder for the first render only.
+ */
+.defer-render {
+  content-visibility: auto;
+  contain-intrinsic-size: auto none auto 160px;
+}

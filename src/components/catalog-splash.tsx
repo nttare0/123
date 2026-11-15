@@ -18,7 +18,7 @@ export function CatalogSplash({
           <p className="max-w-sm text-center text-sm text-muted-foreground">
             The catalog could not be loaded.
           </p>
-          <p className="max-w-md break-all text-center font-mono text-[11px] text-muted-foreground/70">
+          <p className="max-w-md break-all text-center font-mono text-[0.6875rem] text-muted-foreground/70">
             {error}
           </p>
           {onRetry ? (

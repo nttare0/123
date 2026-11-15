@@ -10,6 +10,7 @@ export function Spotlight() {
   const [hovered, setHovered] = React.useState(false)
   const [focused, setFocused] = React.useState(false)
   const [visible, setVisible] = React.useState(true)
+  const [reducedMotion, setReducedMotion] = React.useState(false)
   React.useEffect(() => {
     let active = true
     const refresh = () => {
@@ -31,10 +32,17 @@ export function Spotlight() {
     return () => document.removeEventListener("visibilitychange", update)
   }, [])
   React.useEffect(() => {
-    if (hovered || focused || !visible || items.length < 2) return
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const update = () => setReducedMotion(query.matches)
+    update()
+    query.addEventListener("change", update)
+    return () => query.removeEventListener("change", update)
+  }, [])
+  React.useEffect(() => {
+    if (reducedMotion || hovered || focused || !visible || items.length < 2) return
     const timer = window.setInterval(() => setIndex((current) => (current + 1) % items.length), 5000)
     return () => window.clearInterval(timer)
-  }, [hovered, focused, visible, items.length, index])
+  }, [reducedMotion, hovered, focused, visible, items.length, index])
   const item = items[index]
 
   return (
@@ -50,7 +58,7 @@ export function Spotlight() {
       <div className="w-full px-6 pt-36 pb-10 sm:px-10 sm:pb-14">
         {item ? (
           <div className="max-w-lg space-y-4" aria-live="off" aria-atomic="true">
-            <p className="text-[10px] font-medium tracking-[0.2em] text-white/60 uppercase">
+            <p className="text-[0.625rem] font-medium tracking-[0.2em] text-white/60 uppercase">
               {item.curated ? "Curated movie pick" : `Movie picks${item.year ? ` · ${item.year}` : ""}`}
             </p>
             <h2 className="text-4xl leading-[1.05] font-bold tracking-tight sm:text-5xl lg:text-6xl">{item.title}</h2>

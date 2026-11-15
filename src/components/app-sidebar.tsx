@@ -74,7 +74,7 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
             </span>
             <span className="min-w-0 group-data-[collapsible=icon]:hidden">
               <span className="block text-sm font-semibold tracking-tight">Zepvi</span>
-              <span className="mt-0.5 flex items-center gap-1.5 text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
+              <span className="mt-0.5 flex items-center gap-1.5 text-[0.625rem] font-medium tracking-wider text-muted-foreground uppercase">
                 <span className="size-1.5 rounded-full bg-primary" /> On air
               </span>
             </span>
@@ -100,7 +100,7 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
             >
               <Search className="size-4" />
               <span className="text-xs">Search channels</span>
-              <span className="ml-auto rounded border border-sidebar-border px-1 text-[10px] group-data-[collapsible=icon]:hidden">⌘ K</span>
+              <span className="ml-auto rounded border border-sidebar-border px-1 text-[0.625rem] group-data-[collapsible=icon]:hidden">⌘ K</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -108,7 +108,7 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
 
       <SidebarContent className="gap-5 px-2 group-data-[collapsible=icon]:px-0">
         <SidebarGroup>
-          <SidebarGroupLabel className="mb-2 text-[10px] font-medium tracking-widest uppercase">Discover</SidebarGroupLabel>
+          <SidebarGroupLabel className="mb-2 text-[0.625rem] font-medium tracking-widest uppercase">Discover</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-1.5">
               {NAV.map((item) => {
@@ -128,7 +128,7 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
                         <item.icon className="size-[18px]" strokeWidth={active ? 2.2 : 1.7} aria-hidden />
                         <span>{item.label}</span>
                         {item.to === "/favourites" && favourites > 0 ? (
-                          <span className="ml-auto min-w-5 rounded-md bg-sidebar-accent px-1.5 py-0.5 text-center text-[10px] text-muted-foreground tabular-nums group-data-[collapsible=icon]:hidden">
+                          <span className="ml-auto min-w-5 rounded-md bg-sidebar-accent px-1.5 py-0.5 text-center text-[0.625rem] text-muted-foreground tabular-nums group-data-[collapsible=icon]:hidden">
                             {favourites}
                           </span>
                         ) : null}
@@ -143,7 +143,7 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
 
         {country ? (
           <div className="mx-2 rounded-xl border border-sidebar-border/70 bg-background/40 p-3 group-data-[collapsible=icon]:hidden">
-            <p className="mb-2 flex items-center gap-1.5 text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
+            <p className="mb-2 flex items-center gap-1.5 text-[0.625rem] font-medium tracking-wider text-muted-foreground uppercase">
               <MapPin className="size-3" /> {homeCountry ? "Your country" : "Suggested country"}
             </p>
             <Link
@@ -169,7 +169,7 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
           </SidebarMenuItem>
         </SidebarMenu>
         <div className="border-t border-sidebar-border/70 px-2 pt-3 group-data-[collapsible=icon]:hidden">
-          <nav aria-label="Legal" className="mb-3 flex flex-wrap gap-x-3 gap-y-2 text-[11px] text-muted-foreground">
+          <nav aria-label="Legal" className="mb-3 flex flex-wrap gap-x-3 gap-y-2 text-[0.6875rem] text-muted-foreground">
             <a href="/terms.html" className="hover:text-foreground">Terms</a>
             <a href="/privacy.html" className="hover:text-foreground">Privacy</a>
             <a href="/cookies.html" className="hover:text-foreground">Cookies</a>
@@ -178,7 +178,7 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
             href="https://github.com/iptv-org/iptv"
             target="_blank"
             rel="noreferrer noopener"
-            className="flex items-center justify-between text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+            className="flex items-center justify-between text-[0.6875rem] text-muted-foreground transition-colors hover:text-foreground"
           >
             <span>Powered by iptv-org</span>
             <ArrowUpRight className="size-3" />

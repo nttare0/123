@@ -113,7 +113,7 @@ export function VideoStage() {
         effective === "hidden" && "pointer-events-none opacity-0",
         effective === "theater" && "rounded-xl ring-1 ring-border/60 shadow-2xl",
         effective === "mini" &&
-          "rounded-xl ring-1 ring-border/70 shadow-2xl transition-[top,left,width,height,opacity] duration-300 ease-out",
+          "rounded-xl ring-1 ring-border/70 shadow-2xl transition-[top,left,width,height,opacity] duration-300 ease-out motion-reduce:transition-none",
         idle && effective === "theater" && "cursor-none",
       )}
       style={
