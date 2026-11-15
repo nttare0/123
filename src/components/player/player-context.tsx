@@ -10,11 +10,17 @@ import {
 } from "@/hooks/use-hls"
 import { useCatalog } from "@/lib/catalog"
 import type { Channel, StreamSource } from "@/lib/iptv/types"
+import { assessConnection } from "@/lib/network"
 import { selectSources } from "@/lib/playback"
 import { useLibrary } from "@/stores/library"
 import { useSettings } from "@/stores/settings"
 
 export type PlayerMode = "hidden" | "theater" | "mini"
+
+/** How long a source may stay silent at startup before it counts as broken. */
+const STARTUP_GRACE_MS = 15_000
+/** How long mid-playback buffering may last before failing over. */
+const STALL_GRACE_MS = 25_000
 
 export interface PlayOptions {
   sourceIndex?: number
@@ -81,6 +87,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const stageRef = React.useRef<HTMLDivElement | null>(null)
   const triedRef = React.useRef<Set<number>>(new Set())
   const lastRecentRef = React.useRef<string | null>(null)
+  const reportRef = React.useRef<(error: PlayerError) => void>(() => {})
+  const failoverPendingRef = React.useRef(false)
+  const failoverTokenRef = React.useRef(0)
+  const startedRef = React.useRef(false)
+  const statusRef = React.useRef<PlayerStatus>("idle")
 
   const channel = channelId ? (getChannel(channelId) ?? null) : null
 
@@ -97,6 +108,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         toast.error("That channel is not in the catalog")
         return
       }
+      failoverTokenRef.current += 1
       triedRef.current = new Set()
       setChannelId(id)
       setSourceIndex(options?.sourceIndex ?? 0)
@@ -111,6 +123,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const stop = React.useCallback(() => {
     videoRef.current?.pause()
+    failoverTokenRef.current += 1
     triedRef.current = new Set()
     setChannelId(null)
     setSourceIndex(0)
@@ -118,20 +131,55 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   /* --- source failover ------------------------------------------------ */
-  const handleFatal = React.useCallback(
-    (fatal: PlayerError) => {
-      if (!channel || fatal.kind === "unsupported") return
+  /**
+   * A source has stopped working (hls.js gave up, or the watchdog saw no
+   * video). When the viewer's connection measures healthy the next mirror is
+   * tried automatically; when the connection itself is slow, stay put and say
+   * so — churning through every mirror would only make things worse.
+   */
+  const tryNextSource = React.useCallback(
+    (reason: PlayerError) => {
+      if (!channel || reason.kind === "unsupported") return
       triedRef.current.add(safeIndex)
-      if (!settings.autoFailover || sources.length < 2) return
 
       const next = sources.findIndex((_, i) => !triedRef.current.has(i))
-      if (next === -1) return
+      const giveUp = (error: PlayerError) => reportRef.current(error)
 
-      toast.warning(`Source ${safeIndex + 1} failed — trying source ${next + 1}`, {
-        description: channel.name,
-        duration: 4000,
+      if (!settings.autoFailover) {
+        giveUp(reason)
+        return
+      }
+      if (next === -1) {
+        giveUp({
+          ...reason,
+          title: "No working source",
+          detail: `Every listed source failed for this channel. ${reason.detail}`,
+        })
+        return
+      }
+      if (failoverPendingRef.current) return
+      failoverPendingRef.current = true
+      const token = failoverTokenRef.current
+      void assessConnection().then(({ quality, mbps }) => {
+        failoverPendingRef.current = false
+        if (token !== failoverTokenRef.current) return
+        const speed = mbps != null ? `connection ≈ ${mbps.toFixed(1)} Mb/s` : null
+        if (quality === "poor") {
+          toast.warning("Your internet connection looks slow", {
+            description: speed
+              ? `Measured ${speed} — not switching sources automatically; the problem may be your link.`
+              : "Not switching sources automatically; the problem may be your link.",
+            duration: 6000,
+          })
+          giveUp(reason)
+          return
+        }
+        toast.warning(`Source ${safeIndex + 1} is not working — trying source ${next + 1}`, {
+          description: speed ? `${channel.name} · ${speed}` : channel.name,
+          duration: 4000,
+        })
+        setSourceIndex(next)
       })
-      setSourceIndex(next)
     },
     [channel, safeIndex, settings.autoFailover, sources],
   )
@@ -140,8 +188,40 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     src: source?.url ?? null,
     videoRef,
     autoPlay: settings.autoplay,
-    onFatal: handleFatal,
+    onFatal: tryNextSource,
   })
+  reportRef.current = hls.reportFatal
+  statusRef.current = hls.status
+
+  /* --- dead-source watchdog ------------------------------------------- */
+  // Sources that "connect" but never produce video fail without ever raising
+  // an hls.js error — treat a silent source as broken after a grace period.
+  React.useEffect(() => {
+    startedRef.current = false
+  }, [channelId, source?.url])
+
+  React.useEffect(() => {
+    if (hls.status === "playing") startedRef.current = true
+  }, [hls.status])
+
+  React.useEffect(() => {
+    if (!channel || !source) return
+    const status = hls.status
+    if (status === "error" || status === "paused" || status === "playing") return
+    const grace = startedRef.current ? STALL_GRACE_MS : STARTUP_GRACE_MS
+    const timer = window.setTimeout(() => {
+      const video = videoRef.current
+      if (!video || video.paused) return
+      const now = statusRef.current
+      if (now === "playing" || now === "paused" || now === "error") return
+      tryNextSource({
+        kind: "network",
+        title: "Stream is not responding",
+        detail: "This source connected but never produced video. It may be offline or overloaded.",
+      })
+    }, grace)
+    return () => window.clearTimeout(timer)
+  }, [channel, source, hls.status, tryNextSource])
 
   /* --- transport ------------------------------------------------------ */
   const togglePlay = React.useCallback(() => {
@@ -152,9 +232,16 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, [channel])
 
   const selectSource = React.useCallback((i: number) => {
+    failoverTokenRef.current += 1
     triedRef.current = new Set()
     setSourceIndex(i)
   }, [])
+
+  const retry = React.useCallback(() => {
+    failoverTokenRef.current += 1
+    triedRef.current = new Set()
+    hls.retry()
+  }, [hls.retry])
 
   /* --- volume --------------------------------------------------------- */
   React.useEffect(() => {
@@ -270,7 +357,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       stop,
       togglePlay,
       selectSource,
-      retry: hls.retry,
+      retry,
       setLevel: hls.setLevel,
       setVolume,
       toggleMute,
@@ -290,6 +377,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       nextChannel,
       play,
       prevChannel,
+      retry,
       safeIndex,
       selectSource,
       setVolume,

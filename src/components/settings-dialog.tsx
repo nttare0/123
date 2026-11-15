@@ -81,7 +81,7 @@ export function SettingsDialog({
           <Separator />
           <Row
             title="Auto-failover"
-            description="If a source dies, try the next mirror of the same channel."
+            description="If a source dies or stalls, try the next mirror of the same channel — but only when a connection-speed check says your internet is healthy."
             htmlFor="failover"
           >
             <Switch

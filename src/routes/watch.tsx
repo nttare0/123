@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Check, Copy, Heart, Play, Tv } from "lucide-react"
+import { Copy, Heart, Play, Tv } from "lucide-react"
 import { Link, useLocation, useParams } from "react-router-dom"
 import { toast } from "sonner"
 
@@ -95,6 +95,13 @@ export function WatchPage() {
 
   const country = countryInfo(channel.country, meta)
   const related = topBy(index.byCountry.get(channel.country) ?? [], channel.id)
+  const sourceLabels = player.sources.map((source, i) => {
+    const label = qualityLabel(source.quality) ?? `Source ${i + 1}`
+    const shared = player.sources.some((other, j) => j !== i && (qualityLabel(other.quality) ?? "") === (qualityLabel(source.quality) ?? "") && qualityLabel(source.quality) !== null)
+    return shared ? `${label} · ${i + 1}` : label
+  })
+  const activeSource = player.sources[player.sourceIndex] ?? null
+  const activeWarnings = activeSource ? sourceWarnings(activeSource) : []
 
   return (
     <div className="pb-16">
@@ -159,53 +166,54 @@ export function WatchPage() {
         </div>
 
         {player.sources.length > 1 ? (
-          <section className="space-y-2">
-            <h2 className="text-sm font-medium text-muted-foreground">
-              Sources · playing {player.sourceIndex + 1} of {player.sources.length}
-            </h2>
-            <div className="space-y-1.5">
+          <section className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border bg-card px-3 py-2">
+            <h2 className="text-xs font-medium text-muted-foreground">Sources</h2>
+            <div className="flex flex-wrap items-center gap-1.5">
               {player.sources.map((source, i) => {
                 const active = i === player.sourceIndex
-                const warnings = sourceWarnings(source)
                 return (
-                  <div
+                  <button
                     key={`${source.url}-${i}`}
+                    type="button"
+                    onClick={() => player.selectSource(i)}
+                    aria-pressed={active}
+                    title={hostnameOf(source.url)}
                     className={cn(
-                      "flex items-center gap-3 rounded-lg border px-3 py-2",
-                      active ? "border-primary/50 bg-primary/5" : "bg-card",
+                      "h-7 rounded-full border px-2.5 text-xs font-medium transition-colors",
+                      active
+                        ? "border-primary/50 bg-primary/10 text-primary"
+                        : "border-border bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                     )}
                   >
-                    <Button
-                      size="sm"
-                      variant={active ? "default" : "ghost"}
-                      className="h-7 gap-1.5 px-2 text-xs"
-                      onClick={() => player.selectSource(i)}
-                    >
-                      {active ? <Check className="size-3.5" /> : <Play className="size-3.5" />}
-                      {qualityLabel(source.quality) ?? `Source ${i + 1}`}
-                    </Button>
-                    <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground">
-                      {hostnameOf(source.url)}
-                      {warnings.length ? <span className="text-amber-600 dark:text-amber-400"> · {warnings[0]}</span> : null}
-                    </span>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="size-7 shrink-0 text-muted-foreground"
-                      aria-label="Copy stream URL"
-                      onClick={() => {
-                        void navigator.clipboard
-                          ?.writeText(source.url)
-                          .then(() => toast.success("Stream URL copied"))
-                          .catch(() => toast.error("Could not copy the URL"))
-                      }}
-                    >
-                      <Copy className="size-3.5" />
-                    </Button>
-                  </div>
+                    {sourceLabels[i]}
+                  </button>
                 )
               })}
             </div>
+            {activeSource ? (
+              <span className="ml-auto flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="min-w-0 truncate font-mono">
+                  {hostnameOf(activeSource.url)}
+                  {activeWarnings.length ? (
+                    <span className="text-amber-600 dark:text-amber-400"> · {activeWarnings[0]}</span>
+                  ) : null}
+                </span>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-6 shrink-0 text-muted-foreground"
+                  aria-label="Copy stream URL"
+                  onClick={() => {
+                    void navigator.clipboard
+                      ?.writeText(activeSource.url)
+                      .then(() => toast.success("Stream URL copied"))
+                      .catch(() => toast.error("Could not copy the URL"))
+                  }}
+                >
+                  <Copy className="size-3.5" />
+                </Button>
+              </span>
+            ) : null}
           </section>
         ) : null}
 
