@@ -55,7 +55,7 @@ function Icon({
 
 function LiveDot() {
   return (
-    <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-white/80 uppercase">
+    <span className="flex items-center gap-1.5 text-[0.6875rem] font-semibold tracking-wider text-white/80 uppercase">
       <span className="size-1.5 animate-live-pulse rounded-full bg-red-500" />
       Live
     </span>
@@ -104,7 +104,7 @@ export function PlayerControls({
           <Icon label={muted ? "Unmute" : "Mute"} onClick={player.toggleMute} className="size-8">
             {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
           </Icon>
-          <span className="mx-1 min-w-0 flex-1 truncate text-[10px] text-white/50">
+          <span className="mx-1 min-w-0 flex-1 truncate text-[0.625rem] text-white/50">
             {source ? hostnameOf(source.url) : ""}
           </span>
           <Icon label="Open channel" onClick={open} className="size-8">
@@ -180,7 +180,7 @@ export function PlayerControls({
                             {i + 1}. {qualityLabel(s.quality) ?? "Auto"} · {hostnameOf(s.url)}
                           </span>
                           {warnings.length ? (
-                            <span className="truncate text-[10px] text-muted-foreground">
+                            <span className="truncate text-[0.625rem] text-muted-foreground">
                               {warnings.join(" · ")}
                             </span>
                           ) : null}
@@ -218,7 +218,7 @@ export function PlayerControls({
                   {levels.map((level) => (
                     <DropdownMenuRadioItem key={level.index} value={String(level.index)}>
                       {level.height ? `${level.height}p` : level.label}
-                      <span className="ml-auto pl-4 text-[10px] text-muted-foreground">
+                      <span className="ml-auto pl-4 text-[0.625rem] text-muted-foreground">
                         {(level.bitrate / 1_000_000).toFixed(1)} Mb/s
                       </span>
                     </DropdownMenuRadioItem>

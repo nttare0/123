@@ -24,7 +24,7 @@ export function PlayerOverlay({
   return (
     <div className={cn("pointer-events-none absolute inset-0", faded)} onPointerMove={onWake}>
       {error ? (
-        <div className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 px-6 text-center">
+        <div role="alert" className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 px-6 text-center">
           <AlertTriangle className="size-7 text-amber-400" aria-hidden />
           <div>
             <p className="text-sm font-medium text-white">{error.title}</p>
@@ -56,9 +56,9 @@ export function PlayerOverlay({
       ) : null}
 
       {loading && !error ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-          <Spinner className="size-6 text-white/70" />
-          <p className="text-[11px] tracking-wider text-white/60 uppercase">Connecting</p>
+        <div role="status" className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+          <Spinner aria-hidden className="size-6 text-white/70" />
+          <p className="text-[0.6875rem] tracking-wider text-white/60 uppercase">Connecting</p>
         </div>
       ) : null}
 
@@ -80,7 +80,7 @@ export function PlayerOverlay({
           <button
             type="button"
             onClick={togglePlay}
-            className="pointer-events-auto rounded-full bg-black/80 px-3.5 py-1.5 text-[11px] text-white/85 backdrop-blur-sm"
+            className="pointer-events-auto rounded-full bg-black/80 px-3.5 py-1.5 text-[0.6875rem] text-white/85 backdrop-blur-sm"
           >
             Tap to play
           </button>
@@ -92,7 +92,7 @@ export function PlayerOverlay({
           <button
             type="button"
             onClick={unmute}
-            className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-black/65 px-2.5 py-1 text-[11px] text-white/85 backdrop-blur-sm"
+            className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-black/65 px-2.5 py-1 text-[0.6875rem] text-white/85 backdrop-blur-sm"
           >
             <Volume2 className="size-3.5" /> Unmute
           </button>

@@ -191,7 +191,7 @@ export function WatchPage() {
               })}
             </div>
             {activeSource ? (
-              <span className="ml-auto flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span className="ml-auto flex min-w-0 items-center gap-1.5 text-[0.6875rem] text-muted-foreground">
                 <span className="min-w-0 truncate font-mono">
                   {hostnameOf(activeSource.url)}
                   {activeWarnings.length ? (

@@ -55,7 +55,8 @@ export function ChannelRow({
   const nudge = (direction: -1 | 1) => {
     const el = scroller.current
     if (!el) return
-    el.scrollBy({ left: direction * el.clientWidth * 0.85, behavior: "smooth" })
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    el.scrollBy({ left: direction * el.clientWidth * 0.85, behavior: reduce ? "auto" : "smooth" })
   }
 
   if (!channels.length) return null
