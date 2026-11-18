@@ -62,7 +62,7 @@ The original single-file implementation is preserved in `legacy/live-tv-hub.txt`
 
 ## Vercel deployment and country detection
 
-Production URL: https://droptv.vercel.app/ · Contact: nttare0@gmail.com.
+Production URL: https://zepvi.vercel.app/ · Contact: nttare0@gmail.com.
 
 Import this repository into Vercel. `vercel.json` configures the build and SPA routes. Deploy both `dist/` and the `api/country.ts` function through Vercel, rather than uploading only the static build. The endpoint reads Vercel’s `x-vercel-ip-country` header and returns only a country code with private/no-store caching. No IP is returned to the browser or stored by this function. Vercel may independently process network logs. Do not expose this handler behind a host that blindly trusts client-provided country headers.
 
@@ -71,9 +71,9 @@ Import this repository into Vercel. `vercel.json` configures the build and SPA r
 ## Google Search Console
 
 1. Deploy, then check `/robots.txt`, `/sitemap.xml`, `/terms.html`, `/privacy.html`, and `/cookies.html` at the production URL.
-2. In Search Console, add a **URL-prefix** property for `https://droptv.vercel.app/`. (DNS verification of the shared `vercel.app` parent domain is not under your control.)
+2. In Search Console, add a **URL-prefix** property for `https://zepvi.vercel.app/`. (DNS verification of the shared `vercel.app` parent domain is not under your control.)
 3. Choose HTML-tag verification, copy only the token from its `content` attribute into the Vercel environment variable `VITE_GOOGLE_SITE_VERIFICATION`, and redeploy. The build injects the verification tag. Alternatively, place Google's provided HTML verification file in `public/` and redeploy.
-4. Verify ownership, then submit `https://droptv.vercel.app/sitemap.xml`. Use URL Inspection to request indexing of the homepage and Browse.
+4. Verify ownership, then submit `https://zepvi.vercel.app/sitemap.xml`. Use URL Inspection to request indexing of the homepage and Browse.
 
 Homepage and Browse have canonical URLs and metadata, including pre-JavaScript Browse metadata. Legal pages are complete static HTML. Personal favourites and watch pages are intentionally excluded from the sitemap and marked noindex; filtered Browse pages are canonicalized to Browse and marked noindex by the app. The channel application still relies on JavaScript rendering—this is not full channel-page SSR. Google indexing is not guaranteed. A Search Console account has not been connected or verified automatically.
 
@@ -103,7 +103,7 @@ The production HTML now includes the site owner’s Google Search Console verifi
 
 ## Brand and deployment address
 
-The app is now branded **Zepvi**. Its existing deployment URL remains `https://droptv.vercel.app/`; changing a display name does not reserve or rename a Vercel domain. Keep this address in canonical links, sitemap, robots, structured data and social-image URLs until a replacement domain has been configured and verified. Then update all those URLs together and review Search Console ownership/redirects. Existing `live-tv-hub:*` storage keys intentionally remain unchanged so favourites and settings survive the rebrand. Name selection is not trademark clearance or a domain-availability guarantee.
+The app is now branded **Zepvi**. Its existing deployment URL remains `https://zepvi.vercel.app/`; changing a display name does not reserve or rename a Vercel domain. Keep this address in canonical links, sitemap, robots, structured data and social-image URLs until a replacement domain has been configured and verified. Then update all those URLs together and review Search Console ownership/redirects. Existing `live-tv-hub:*` storage keys intentionally remain unchanged so favourites and settings survive the rebrand. Name selection is not trademark clearance or a domain-availability guarantee.
 
 ## Vercel Web Analytics
 

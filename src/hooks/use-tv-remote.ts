@@ -165,7 +165,7 @@ export function useTvRemote({ enabled = true, onBack, onSelect }: TvRemoteOption
         const current = activeItem()
         if (!current) {
           // Nothing focused yet: enter the grid from the edge we came from.
-          const sorted = [...all].sort((a, b) =>
+          const sorted = all.toSorted((a, b) =>
             direction === "up" || direction === "left" ? b.cy - a.cy || b.cx - a.cx : a.cy - b.cy || a.cx - b.cx,
           )
           mark(sorted[0].el)
@@ -200,7 +200,7 @@ export function useTvRemote({ enabled = true, onBack, onSelect }: TvRemoteOption
 
       if (key === "Home" || key === "End") {
         event.preventDefault()
-        const sorted = [...all].sort((a, b) => a.top - b.top || a.left - b.left)
+        const sorted = all.toSorted((a, b) => a.top - b.top || a.left - b.left)
         mark(key === "Home" ? sorted[0].el : sorted[sorted.length - 1].el)
       }
     }

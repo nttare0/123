@@ -24,7 +24,7 @@ export function Seo() {
     set('meta[name="twitter:description"]', 'content', description)
     set('meta[property="og:title"]', 'content', title)
     set('meta[property="og:description"]', 'content', description)
-    const canonical = `https://droptv.vercel.app${pathname === "/browse" ? "/browse" : pathname}`
+    const canonical = `https://zepvi.vercel.app${pathname === "/browse" ? "/browse" : pathname}`
     set('link[rel="canonical"]', 'href', canonical)
     set('meta[property="og:url"]', 'content', canonical)
     let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]')

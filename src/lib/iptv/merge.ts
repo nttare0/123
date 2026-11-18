@@ -36,7 +36,7 @@ function isPlayableUrl(url: string): boolean {
 
 function pickLogo(logos: RawLogo[] | undefined): string | undefined {
   if (!logos?.length) return undefined
-  const sorted = [...logos].sort((a, b) => {
+  const sorted = logos.toSorted((a, b) => {
     // https first: an http logo is blocked as mixed content on an https page
     const aHttps = a.url.startsWith("https:") ? 0 : 1
     const bHttps = b.url.startsWith("https:") ? 0 : 1
@@ -191,8 +191,8 @@ export function mergeCatalog(
 export function buildMeta(raw: Partial<RawBundle>, generatedAt?: string) {
   return {
     generatedAt: generatedAt ?? new Date().toISOString(),
-    countries: (raw.countries ?? []).slice().sort((a, b) => a.name.localeCompare(b.name)),
-    categories: (raw.categories ?? []).slice().sort((a, b) => a.name.localeCompare(b.name)),
+    countries: (raw.countries ?? []).toSorted((a, b) => a.name.localeCompare(b.name)),
+    categories: (raw.categories ?? []).toSorted((a, b) => a.name.localeCompare(b.name)),
     languages: (raw.languages ?? []).slice(),
     regions: (raw.regions ?? []).slice(),
   }
